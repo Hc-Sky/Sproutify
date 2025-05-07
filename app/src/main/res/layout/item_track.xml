@@ -1,72 +1,79 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/cardTrack"
+    android:id="@+id/itemRoot"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginTop="8dp"
-    android:layout_marginBottom="8dp"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="4dp"
-    app:strokeWidth="0dp"
-    app:cardUseCompatPadding="true">
+    android:minHeight="72dp"
+    android:paddingStart="16dp"
+    android:paddingEnd="12dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp"
+    android:clickable="true"
+    android:foreground="?attr/selectableItemBackground">
 
+    <!-- Pochette -->
+    <ImageView
+        android:id="@+id/imageCover"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:scaleType="centerCrop"
+        android:contentDescription="@string/cover_art"
+        android:src="@drawable/ic_album_placeholder"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+    <!-- Titre -->
+    <TextView
+        android:id="@+id/textTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text="Titre du morceau"
+        android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+        android:textColor="@android:color/black"
+        app:layout_constraintStart_toEndOf="@id/imageCover"
+        app:layout_constraintEnd_toStartOf="@id/iconMore"
+        app:layout_constraintTop_toTopOf="@id/imageCover"
+        app:layout_constraintHorizontal_bias="0"
+        android:layout_marginStart="16dp" />
+
+    <!-- Ligne secondaire : icônes + artiste -->
     <LinearLayout
-        android:layout_width="match_parent"
+        android:id="@+id/layoutMeta"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="16dp"
-        android:gravity="center_vertical">
+        android:gravity="center_vertical"
+        app:layout_constraintStart_toStartOf="@id/textTitle"
+        app:layout_constraintEnd_toStartOf="@id/iconMore"
+        app:layout_constraintTop_toBottomOf="@id/textTitle"
+        android:layout_marginTop="4dp">
 
-        <!-- Pochette / miniature -->
-        <ImageView
-            android:id="@+id/imageCover"
-            android:layout_width="64dp"
-            android:layout_height="64dp"
-            android:scaleType="centerCrop"
-            android:contentDescription="@string/cover_art"
-            android:src="@drawable/ic_album_placeholder"
-            android:transitionName="coverTransition" />
-
-        <!-- Titre + Auteur -->
-        <LinearLayout
-            android:layout_width="0dp"
+        <!-- Artiste(s) -->
+        <TextView
+            android:id="@+id/textArtist"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_weight="1"
-            android:orientation="vertical">
-
-            <TextView
-                android:id="@+id/textTitle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:text="Titre du morceau"
-                android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
-
-            <TextView
-                android:id="@+id/textArtist"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:text="Nom de l’artiste"
-                android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-                android:textColor="?attr/colorOnSurfaceVariant" />
-
-        </LinearLayout>
-
-        <!-- Icône d’action (lecture ou menu) -->
-        <ImageView
-            android:id="@+id/iconMore"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:padding="4dp"
-            android:src="@drawable/ic_more_vert"
-            android:contentDescription="@string/more_options"
-            app:tint="?attr/colorOnSurface" />
-
+            android:layout_marginStart="6dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="Nom de l’artiste"
+            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+            android:textColor="#B3B3B3" />
     </LinearLayout>
 
-</com.google.android.material.card.MaterialCardView>
+    <ImageView
+        android:id="@+id/iconMore"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:src="@drawable/ic_more_vert"
+        android:contentDescription="@string/more_options"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:tint="@android:color/white" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

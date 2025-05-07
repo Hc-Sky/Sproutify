@@ -38,19 +38,21 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.TrackVH> {
         return new TrackVH(v);
     }
 
-    @Override public void onBindViewHolder(@NonNull TrackVH h, int pos) {
+    @Override
+    public void onBindViewHolder(@NonNull TrackVH h, int pos) {
         Track t = data.get(pos);
+
         h.title.setText(t.title);
         h.artist.setText(t.artist);
-
         Picasso.get()
-                .load(t.coverUrl)                  // URL absolue ou ressource locale
+                .load(t.coverUrl)
                 .placeholder(R.drawable.ic_album_placeholder)
-                .error(R.drawable.ic_album_placeholder)
                 .into(h.cover);
 
-        h.itemView.setOnClickListener(v -> listener.onTrackClick(t, h.cover));
+        h.itemView.setOnClickListener(v ->
+                listener.onTrackClick(t, h.cover));
     }
+
 
     @Override public int getItemCount() { return data.size(); }
 
