@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Sproutify</string>
+    <string name="cover_art">Pochette de l’album</string>
+    <string name="more_options">Plus d’options</string>
 </resources>

@@ -2,23 +2,40 @@ package com.example.sproutify;
 
 import android.os.Bundle;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.example.sproutify.data.CsvLoader;
+import com.example.sproutify.model.Track;
+import com.example.sproutify.ui.TrackAdapter;
+import com.google.android.material.appbar.MaterialToolbar;
+
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
+
+    private RecyclerView recycler;
+    private TrackAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
+
+        // AppBar
+        MaterialToolbar bar = findViewById(R.id.topAppBar);
+        setSupportActionBar(bar);
+
+        // Liste
+        recycler = findViewById(R.id.recyclerTracks);
+        recycler.setLayoutManager(new LinearLayoutManager(this));
+        recycler.setHasFixedSize(true);
+
+        List<Track> tracks = CsvLoader.loadTracks(this);
+        adapter = new TrackAdapter(this, tracks, (track, img) -> {
+            // TODO : ouvrir LyricsActivity avec transition partagée + parcelable
         });
+        recycler.setAdapter(adapter);
     }
 }
