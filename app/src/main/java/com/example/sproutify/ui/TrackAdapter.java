@@ -66,4 +66,11 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.TrackVH> {
             artist = v.findViewById(R.id.textArtist);
         }
     }
+
+    public void updateData(List<Track> newData) {
+        data.clear();
+        data.addAll(newData);
+        notifyDataSetChanged();
+    }
+
 }

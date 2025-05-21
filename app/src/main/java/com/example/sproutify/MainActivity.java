@@ -10,32 +10,31 @@ import com.example.sproutify.data.CsvLoader;
 import com.example.sproutify.model.Track;
 import com.example.sproutify.ui.TrackAdapter;
 import com.google.android.material.appbar.MaterialToolbar;
+import java.util.ArrayList;
 
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
-    private RecyclerView recycler;
     private TrackAdapter adapter;
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // AppBar
-        MaterialToolbar bar = findViewById(R.id.topAppBar);
-        setSupportActionBar(bar);
+        setSupportActionBar(findViewById(R.id.topAppBar));
 
-        // Liste
-        recycler = findViewById(R.id.recyclerTracks);
-        recycler.setLayoutManager(new LinearLayoutManager(this));
-        recycler.setHasFixedSize(true);
+        RecyclerView rv = findViewById(R.id.recyclerTracks);
+        rv.setLayoutManager(new LinearLayoutManager(this));
+        rv.setHasFixedSize(true);
 
-        List<Track> tracks = CsvLoader.loadTracks(this);
-        adapter = new TrackAdapter(this, tracks, (track, img) -> {
-            // TODO : ouvrir LyricsActivity avec transition partagée + parcelable
+        adapter = new TrackAdapter(this, new ArrayList<>(), (t, img) -> {
+            // TODO : ouverture LyricsActivity
         });
-        recycler.setAdapter(adapter);
+        rv.setAdapter(adapter);
+
+        // ---- Téléchargement du CSV ----
+        String csvUrl = "http://edu.info06.net/lyrics/lyrics.csv";
+        CsvLoader.fetch(csvUrl, tracks -> adapter.updateData(tracks));
     }
 }
