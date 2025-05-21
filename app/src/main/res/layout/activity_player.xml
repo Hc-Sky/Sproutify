@@ -17,68 +17,115 @@
         app:titleTextColor="@color/text_primary"
         app:title="Lecteur" />
 
-    <!-- Pochette de l'album -->
-    <androidx.cardview.widget.CardView
-        android:id="@+id/coverCardView"
-        android:layout_width="275dp"
-        android:layout_height="275dp"
-        android:layout_marginStart="40dp"
-        android:layout_marginTop="40dp"
-        android:layout_marginEnd="40dp"
-        app:cardCornerRadius="8dp"
-        app:cardElevation="4dp"
-        app:layout_constraintDimensionRatio="1:1"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/playerToolbar">
+    <!-- ScrollView pour permettre de défiler quand les paroles sont affichées -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        app:layout_constraintTop_toBottomOf="@id/playerToolbar"
+        app:layout_constraintBottom_toTopOf="@id/playerSeekBar">
 
-        <ImageView
-            android:id="@+id/playerCoverImage"
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:contentDescription="Pochette de l'album"
-            android:scaleType="centerCrop"
-            android:transitionName="sharedCover"
-            tools:src="@drawable/ic_album_placeholder" />
-    </androidx.cardview.widget.CardView>
+            android:layout_height="wrap_content">
 
-    <!-- Titre et artiste -->
-    <TextView
-        android:id="@+id/playerTrackTitle"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="32dp"
-        android:layout_marginEnd="24dp"
-        android:ellipsize="end"
-        android:gravity="center"
-        android:maxLines="1"
-        android:textAppearance="?attr/textAppearanceHeadline6"
-        android:textColor="@color/text_primary"
-        android:textSize="22sp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/coverCardView"
-        tools:text="Nom de la chanson" />
+            <!-- Pochette de l'album -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/coverCardView"
+                android:layout_width="275dp"
+                android:layout_height="275dp"
+                android:layout_marginStart="40dp"
+                android:layout_marginTop="40dp"
+                android:layout_marginEnd="40dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="4dp"
+                app:layout_constraintDimensionRatio="1:1"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
 
-    <TextView
-        android:id="@+id/playerArtistName"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="24dp"
-        android:ellipsize="end"
-        android:gravity="center"
-        android:maxLines="1"
-        android:textAppearance="?attr/textAppearanceBody1"
-        android:textColor="@color/text_secondary"
-        android:textSize="16sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/playerTrackTitle"
-        tools:text="Nom de l'artiste" />
+                <ImageView
+                    android:id="@+id/playerCoverImage"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:contentDescription="Pochette de l'album"
+                    android:scaleType="centerCrop"
+                    android:transitionName="sharedCover"
+                    tools:src="@drawable/ic_album_placeholder" />
+            </androidx.cardview.widget.CardView>
+
+            <!-- Titre et artiste -->
+            <TextView
+                android:id="@+id/playerTrackTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="24dp"
+                android:layout_marginTop="32dp"
+                android:layout_marginEnd="24dp"
+                android:ellipsize="end"
+                android:gravity="center"
+                android:maxLines="1"
+                android:textAppearance="?attr/textAppearanceHeadline6"
+                android:textColor="@color/text_primary"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/coverCardView"
+                tools:text="Nom de la chanson" />
+
+            <TextView
+                android:id="@+id/playerArtistName"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="24dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginEnd="24dp"
+                android:ellipsize="end"
+                android:gravity="center"
+                android:maxLines="1"
+                android:textAppearance="?attr/textAppearanceBody1"
+                android:textColor="@color/text_secondary"
+                android:textSize="16sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/playerTrackTitle"
+                tools:text="Nom de l'artiste" />
+
+            <!-- Paroles de la chanson -->
+            <TextView
+                android:id="@+id/playerLyricsText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="24dp"
+                android:layout_marginTop="24dp"
+                android:layout_marginEnd="24dp"
+                android:layout_marginBottom="24dp"
+                android:gravity="center"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp"
+                android:lineSpacingExtra="6dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/playerArtistName"
+                app:layout_constraintBottom_toBottomOf="parent"
+                tools:text="Paroles de la chanson" />
+
+            <!-- Bouton favori -->
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/playerFavoriteButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="16dp"
+                android:src="@drawable/ic_favorite_border"
+                android:contentDescription="Ajouter aux favoris"
+                app:fabSize="mini"
+                app:backgroundTint="@color/card_background"
+                app:tint="@color/favorite_button_tint"
+                app:layout_constraintTop_toTopOf="@id/coverCardView"
+                app:layout_constraintEnd_toEndOf="@id/coverCardView" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </ScrollView>
 
     <!-- Barre de progression -->
     <SeekBar
@@ -176,19 +223,5 @@
             android:tint="@color/text_primary"
             android:src="@drawable/ic_next" />
     </LinearLayout>
-
-    <!-- Bouton favori -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/playerFavoriteButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        android:src="@drawable/ic_favorite_border"
-        android:contentDescription="Ajouter aux favoris"
-        app:fabSize="mini"
-        app:backgroundTint="@color/card_background"
-        app:tint="@color/favorite_button_tint"
-        app:layout_constraintTop_toTopOf="@id/coverCardView"
-        app:layout_constraintEnd_toEndOf="@id/coverCardView" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

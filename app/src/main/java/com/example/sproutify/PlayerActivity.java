@@ -51,6 +51,7 @@ public class PlayerActivity extends AppCompatActivity {
     private ImageView coverImageView;
     private TextView titleTextView;
     private TextView artistTextView;
+    private TextView lyricsTextView; // TextView pour les paroles
     private SeekBar seekBar;
     private TextView currentTimeTextView;
     private TextView totalTimeTextView;
@@ -74,6 +75,7 @@ public class PlayerActivity extends AppCompatActivity {
         coverImageView = findViewById(R.id.playerCoverImage);
         titleTextView = findViewById(R.id.playerTrackTitle);
         artistTextView = findViewById(R.id.playerArtistName);
+        lyricsTextView = findViewById(R.id.playerLyricsText); // Initialisation du TextView des paroles
         seekBar = findViewById(R.id.playerSeekBar);
         currentTimeTextView = findViewById(R.id.playerCurrentTime);
         totalTimeTextView = findViewById(R.id.playerTotalTime);
@@ -86,343 +88,292 @@ public class PlayerActivity extends AppCompatActivity {
         // Configuration de la toolbar
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setDisplayShowHomeEnabled(true);
-        toolbar.setNavigationOnClickListener(v -> finish());
+        getSupportActionBar().setDisplayShowTitleEnabled(false);
 
-        // Récupération du morceau et de la liste des morceaux depuis l'intent
+        toolbar.setNavigationOnClickListener(view -> finish());
+
+        // Récupération des données transmises
         if (getIntent().hasExtra(EXTRA_TRACK)) {
             currentTrack = getIntent().getParcelableExtra(EXTRA_TRACK);
-
-            // Récupération de la liste complète des morceaux si disponible
-            if (getIntent().hasExtra(EXTRA_TRACK_LIST)) {
-                trackList = getIntent().getParcelableArrayListExtra(EXTRA_TRACK_LIST);
-                currentTrackPosition = getIntent().getIntExtra(EXTRA_TRACK_POSITION, 0);
-            } else {
-                // Si on n'a qu'un morceau unique, créer une liste avec ce seul morceau
-                trackList = new ArrayList<>();
-                trackList.add(currentTrack);
-                currentTrackPosition = 0;
-            }
-
-            setupPlayerWithTrack(currentTrack);
-        } else {
-            finish(); // Terminer l'activité si aucun morceau n'est fourni
         }
 
-        // Initialisation du handler pour mettre à jour la seekbar
+        if (getIntent().hasExtra(EXTRA_TRACK_LIST)) {
+            trackList = getIntent().getParcelableArrayListExtra(EXTRA_TRACK_LIST);
+            currentTrackPosition = getIntent().getIntExtra(EXTRA_TRACK_POSITION, 0);
+            currentTrack = trackList.get(currentTrackPosition);
+        }
+
+        if (currentTrack == null) {
+            Toast.makeText(this, "Erreur lors du chargement de la piste", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
+        // Initialisation du MediaPlayer
+        mediaPlayer = new MediaPlayer();
         handler = new Handler();
 
-        // Configuration des listeners
-        setupListeners();
+        // Mise à jour de l'interface utilisateur
+        updateUI();
 
-        // Configuration du bouton favoris
-        setupFavoriteButton();
+        // Chargement et lancement de la piste
+        loadAndPlayTrack();
+
+        // Configuration du SeekBar
+        setupSeekBar();
+
+        // Configuration des boutons
+        setupButtons();
+
+        // Mise à jour de l'état du bouton favori
+        updateFavoriteButton();
     }
 
-    private void setupPlayerWithTrack(Track track) {
-        // Marquer comme en cours de chargement
+    private void updateUI() {
+        titleTextView.setText(currentTrack.title);
+        artistTextView.setText(currentTrack.artist);
+
+        // Affichage des paroles si disponibles
+        if (currentTrack.contentLines != null && !currentTrack.contentLines.isEmpty()) {
+            lyricsTextView.setText(currentTrack.contentLines);
+            lyricsTextView.setVisibility(View.VISIBLE);
+        } else {
+            lyricsTextView.setText("Aucune parole disponible");
+            lyricsTextView.setVisibility(View.VISIBLE);
+        }
+
+        // Chargement de l'image
+        if (currentTrack.coverUrl != null && !currentTrack.coverUrl.isEmpty()) {
+            new LoadImageTask(coverImageView).execute(currentTrack.coverUrl);
+        } else {
+            coverImageView.setImageResource(R.drawable.ic_launcher_background);
+        }
+    }
+
+    private void loadAndPlayTrack() {
         isLoading = true;
+        playPauseButton.setImageResource(R.drawable.ic_pause);
 
-        // Affichage des informations du morceau
-        titleTextView.setText(track.title);
-        artistTextView.setText(track.artist);
-
-        // Chargement de la pochette avec AsyncTask
-        new LoadImageTask(coverImageView).execute(track.coverUrl);
-
-        // Afficher un message de chargement
-        currentTimeTextView.setText("Chargement...");
-        totalTimeTextView.setText("--:--");
-
-        // Désactiver tous les boutons pendant le chargement
-        playPauseButton.setEnabled(false);
-        prevButton.setEnabled(false);
-        nextButton.setEnabled(false);
-        seekBar.setEnabled(false);
-        seekBar.setProgress(0);
-
-        // Libérer les ressources MediaPlayer précédentes
-        releaseMediaPlayer();
-
-        // Initialisation d'un nouveau MediaPlayer
-        mediaPlayer = new MediaPlayer();
         try {
-            mediaPlayer.setDataSource(track.mp3Url);
+            mediaPlayer.reset();
+            mediaPlayer.setDataSource(currentTrack.mp3Url);
+            mediaPlayer.prepareAsync();
 
             mediaPlayer.setOnPreparedListener(mp -> {
-                if (isFinishing()) return;  // Éviter les crash si l'activité est détruite
-
-                // Initialisation de la seekbar
-                seekBar.setMax(mediaPlayer.getDuration());
-                totalTimeTextView.setText(formatTime(mediaPlayer.getDuration()));
-                currentTimeTextView.setText("0:00");
-                seekBar.setEnabled(true);
-
-                // Activer les boutons selon la position dans la liste
-                playPauseButton.setEnabled(true);
-                prevButton.setEnabled(currentTrackPosition > 0);
-                nextButton.setEnabled(currentTrackPosition < trackList.size() - 1);
-
-                // Marquer comme chargé
                 isLoading = false;
+                isPlaying = true;
+                mediaPlayer.start();
 
-                // Lancement automatique de la lecture
-                togglePlayPause();
+                // Mettre à jour le temps total
+                totalTimeTextView.setText(formatDuration(mediaPlayer.getDuration()));
+                seekBar.setMax(mediaPlayer.getDuration());
+
+                // Démarrer la mise à jour du SeekBar
+                updateSeekBar();
             });
 
             mediaPlayer.setOnCompletionListener(mp -> {
-                playPauseButton.setImageResource(R.drawable.ic_play);
                 isPlaying = false;
-                seekBar.setProgress(0);
-                currentTimeTextView.setText("0:00");
+                playPauseButton.setImageResource(R.drawable.ic_play);
 
-                // Passer automatiquement à la piste suivante si disponible
-                if (currentTrackPosition < trackList.size() - 1) {
+                // Passer à la chanson suivante si possible
+                if (trackList.size() > 1) {
                     playNextTrack();
                 }
             });
 
             mediaPlayer.setOnErrorListener((mp, what, extra) -> {
-                Log.e(TAG, "MediaPlayer error: what=" + what + ", extra=" + extra);
-
-                // Gérer les erreurs de lecture
-                if (isFinishing()) return true;  // Ignore les erreurs si l'activité est détruite
-
-                // Afficher message d'erreur
-                playPauseButton.setEnabled(false);
-                currentTimeTextView.setText("Erreur de lecture");
-                Toast.makeText(PlayerActivity.this,
-                               "Erreur lors de la lecture de " + track.title,
-                               Toast.LENGTH_SHORT).show();
-
-                // Marquer comme chargé pour éviter les blocs
                 isLoading = false;
-
+                isPlaying = false;
+                playPauseButton.setImageResource(R.drawable.ic_play);
+                Toast.makeText(PlayerActivity.this, "Erreur de lecture", Toast.LENGTH_SHORT).show();
                 return true;
             });
 
-            // Préparer le MediaPlayer de manière asynchrone
-            mediaPlayer.prepareAsync();
-
         } catch (IOException e) {
-            Log.e(TAG, "Error setting data source", e);
-            e.printStackTrace();
-            currentTimeTextView.setText("Erreur: URL invalide");
             isLoading = false;
+            Log.e(TAG, "Erreur lors du chargement de la piste: " + e.getMessage());
+            Toast.makeText(this, "Erreur lors du chargement de la piste", Toast.LENGTH_SHORT).show();
         }
     }
 
-    private void setupListeners() {
-        // Listener pour le bouton play/pause
-        playPauseButton.setOnClickListener(v -> togglePlayPause());
-
-        // Listener pour la seekbar
+    private void setupSeekBar() {
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 if (fromUser && mediaPlayer != null) {
                     mediaPlayer.seekTo(progress);
-                    currentTimeTextView.setText(formatTime(progress));
+                    currentTimeTextView.setText(formatDuration(progress));
                 }
             }
 
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
-                // Pas besoin d'implémentation
+                // Optionnel
             }
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                // Pas besoin d'implémentation
+                // Optionnel
+            }
+        });
+    }
+
+    private void updateSeekBar() {
+        if (mediaPlayer != null && isPlaying) {
+            seekBar.setProgress(mediaPlayer.getCurrentPosition());
+            currentTimeTextView.setText(formatDuration(mediaPlayer.getCurrentPosition()));
+
+            handler.postDelayed(() -> {
+                updateSeekBar();
+            }, 1000);
+        }
+    }
+
+    private void setupButtons() {
+        // Bouton lecture/pause
+        playPauseButton.setOnClickListener(view -> {
+            if (isLoading) return;
+
+            if (isPlaying) {
+                pausePlayback();
+            } else {
+                resumePlayback();
             }
         });
 
-        // Gestion du bouton précédent
-        prevButton.setOnClickListener(v -> playPreviousTrack());
-
-        // Gestion du bouton suivant
-        nextButton.setOnClickListener(v -> playNextTrack());
-    }
-
-    private void setupFavoriteButton() {
-        updateFavoriteButtonState();
-
-        favoriteButton.setOnClickListener(v -> {
-            boolean isFavorite = favoritesManager.toggleFavorite(currentTrack);
-            updateFavoriteButtonState();
-
-            // Afficher un message de confirmation
-            String message = isFavorite ?
-                    "Ajouté aux favoris" :
-                    "Retiré des favoris";
-            Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+        // Bouton précédent
+        prevButton.setOnClickListener(view -> {
+            playPreviousTrack();
         });
-    }
 
-    private void updateFavoriteButtonState() {
-        boolean isFavorite = favoritesManager.isFavorite(currentTrack);
-        if (isFavorite) {
-            favoriteButton.setImageResource(R.drawable.ic_favorite_filled);
-            favoriteButton.getDrawable().setTint(getResources().getColor(R.color.favorite_active, getTheme()));
-        } else {
-            favoriteButton.setImageResource(R.drawable.ic_favorite_border);
-            favoriteButton.getDrawable().setTint(getResources().getColor(R.color.favorite_button_tint, getTheme()));
-        }
+        // Bouton suivant
+        nextButton.setOnClickListener(view -> {
+            playNextTrack();
+        });
+
+        // Bouton favori
+        favoriteButton.setOnClickListener(view -> {
+            toggleFavoriteStatus();
+        });
     }
 
     private void playPreviousTrack() {
-        // Éviter les actions multiples pendant le chargement
-        if (isLoading) return;
+        if (trackList.size() <= 1) return;
 
-        if (currentTrackPosition > 0) {
-            currentTrackPosition--;
-            currentTrack = trackList.get(currentTrackPosition);
-            setupPlayerWithTrack(currentTrack);
-            updateFavoriteButtonState(); // Mise à jour de l'état du bouton favori
-        } else {
-            // Si c'est la première piste, retour au début de la piste
-            if (mediaPlayer != null) {
-                mediaPlayer.seekTo(0);
-                seekBar.setProgress(0);
-                currentTimeTextView.setText("0:00");
-            }
+        currentTrackPosition--;
+        if (currentTrackPosition < 0) {
+            currentTrackPosition = trackList.size() - 1;
         }
+
+        currentTrack = trackList.get(currentTrackPosition);
+        updateUI();
+        loadAndPlayTrack();
+        updateFavoriteButton();
     }
 
     private void playNextTrack() {
-        // Éviter les actions multiples pendant le chargement
-        if (isLoading) return;
+        if (trackList.size() <= 1) return;
 
-        if (currentTrackPosition < trackList.size() - 1) {
-            currentTrackPosition++;
-            currentTrack = trackList.get(currentTrackPosition);
-            setupPlayerWithTrack(currentTrack);
-            updateFavoriteButtonState(); // Mise à jour de l'état du bouton favori
+        currentTrackPosition++;
+        if (currentTrackPosition >= trackList.size()) {
+            currentTrackPosition = 0;
         }
+
+        currentTrack = trackList.get(currentTrackPosition);
+        updateUI();
+        loadAndPlayTrack();
+        updateFavoriteButton();
     }
 
-    private void togglePlayPause() {
-        if (mediaPlayer != null && !isLoading) {
-            if (isPlaying) {
-                // Pause
-                mediaPlayer.pause();
-                playPauseButton.setImageResource(R.drawable.ic_play);
-                handler.removeCallbacks(updateSeekBar);
-            } else {
-                // Play
-                mediaPlayer.start();
-                playPauseButton.setImageResource(R.drawable.ic_pause);
-                updateSeekbar();
-            }
-            isPlaying = !isPlaying;
-        }
-    }
-
-    private void updateSeekbar() {
+    private void pausePlayback() {
         if (mediaPlayer != null && mediaPlayer.isPlaying()) {
-            try {
-                int currentPosition = mediaPlayer.getCurrentPosition();
-                seekBar.setProgress(currentPosition);
-                currentTimeTextView.setText(formatTime(currentPosition));
-
-                // Mise à jour toutes les 100ms
-                updateSeekBar = () -> updateSeekbar();
-                handler.postDelayed(updateSeekBar, 100);
-            } catch (IllegalStateException e) {
-                Log.e(TAG, "Error updating seekbar", e);
-            }
+            mediaPlayer.pause();
+            isPlaying = false;
+            playPauseButton.setImageResource(R.drawable.ic_play);
         }
     }
 
-    private void releaseMediaPlayer() {
-        if (mediaPlayer != null) {
-            try {
-                if (mediaPlayer.isPlaying()) {
-                    mediaPlayer.stop();
-                }
-                mediaPlayer.reset();
-                mediaPlayer.release();
-                mediaPlayer = null;
-                isPlaying = false;
-                handler.removeCallbacks(updateSeekBar);
-            } catch (Exception e) {
-                Log.e(TAG, "Error releasing MediaPlayer", e);
-            }
+    private void resumePlayback() {
+        if (mediaPlayer != null && !mediaPlayer.isPlaying()) {
+            mediaPlayer.start();
+            isPlaying = true;
+            playPauseButton.setImageResource(R.drawable.ic_pause);
+            updateSeekBar();
         }
     }
 
-    private String formatTime(int timeInMs) {
-        long minutes = TimeUnit.MILLISECONDS.toMinutes(timeInMs);
-        long seconds = TimeUnit.MILLISECONDS.toSeconds(timeInMs) -
-                TimeUnit.MINUTES.toSeconds(minutes);
-        return String.format(Locale.getDefault(), "%d:%02d", minutes, seconds);
+    private void toggleFavoriteStatus() {
+        boolean isFavorite = favoritesManager.toggleFavorite(currentTrack);
+        updateFavoriteButton();
+    }
+
+    private void updateFavoriteButton() {
+        boolean isFavorite = favoritesManager.isFavorite(currentTrack);
+        if (isFavorite) {
+            favoriteButton.setImageResource(R.drawable.ic_favorite_filled);
+        } else {
+            favoriteButton.setImageResource(R.drawable.ic_favorite_border);
+        }
+    }
+
+    private String formatDuration(long duration) {
+        return String.format(Locale.getDefault(), "%02d:%02d",
+                TimeUnit.MILLISECONDS.toMinutes(duration),
+                TimeUnit.MILLISECONDS.toSeconds(duration) -
+                TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(duration))
+        );
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        if (mediaPlayer != null && isPlaying) {
-            // Pause automatique quand l'activité est mise en pause
-            mediaPlayer.pause();
-            handler.removeCallbacks(updateSeekBar);
-            // Ne pas changer l'état de isPlaying pour reprendre la lecture au retour
-        }
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (mediaPlayer != null && isPlaying) {
-            // Reprendre la lecture si l'activité était en train de jouer avant d'être mise en pause
-            mediaPlayer.start();
-            updateSeekbar();
-        }
+        pausePlayback();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        releaseMediaPlayer();
+        if (mediaPlayer != null) {
+            if (mediaPlayer.isPlaying()) {
+                mediaPlayer.stop();
+            }
+            mediaPlayer.release();
+            mediaPlayer = null;
+        }
+
+        if (handler != null) {
+            handler.removeCallbacksAndMessages(null);
+        }
     }
 
-    // AsyncTask pour charger les images sans utiliser Picasso
+    // Classe AsyncTask pour charger les images
     private static class LoadImageTask extends AsyncTask<String, Void, Bitmap> {
         private final WeakReference<ImageView> imageViewReference;
 
-        public LoadImageTask(ImageView imageView) {
-            this.imageViewReference = new WeakReference<>(imageView);
+        LoadImageTask(ImageView imageView) {
+            imageViewReference = new WeakReference<>(imageView);
         }
 
         @Override
         protected Bitmap doInBackground(String... params) {
-            String imageUrl = params[0];
-            Bitmap bitmap = null;
             try {
-                URL url = new URL(imageUrl);
+                URL url = new URL(params[0]);
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setDoInput(true);
                 connection.connect();
                 InputStream input = connection.getInputStream();
-                bitmap = BitmapFactory.decodeStream(input);
+                return BitmapFactory.decodeStream(input);
             } catch (IOException e) {
-                e.printStackTrace();
+                Log.e(TAG, "Erreur lors du chargement de l'image: " + e.getMessage());
+                return null;
             }
-            return bitmap;
         }
 
         @Override
-        protected void onPostExecute(Bitmap bitmap) {
-            if (bitmap != null && imageViewReference != null) {
-                ImageView imageView = imageViewReference.get();
-                if (imageView != null) {
-                    imageView.setImageBitmap(bitmap);
-                }
-            } else {
-                // En cas d'erreur, afficher une image par défaut
-                ImageView imageView = imageViewReference.get();
-                if (imageView != null) {
-                    imageView.setImageResource(R.drawable.ic_album_placeholder);
-                }
+        protected void onPostExecute(Bitmap result) {
+            if (result != null && imageViewReference.get() != null) {
+                imageViewReference.get().setImageBitmap(result);
             }
         }
     }
