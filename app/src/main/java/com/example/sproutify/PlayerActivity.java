@@ -94,6 +94,11 @@ public class PlayerActivity extends AppCompatActivity {
         // Chargement de la pochette avec AsyncTask au lieu de Picasso
         new LoadImageTask(coverImageView).execute(track.coverUrl);
 
+        // Désactiver les boutons jusqu'à ce que le mediaPlayer soit prêt
+        playPauseButton.setEnabled(false);
+        prevButton.setEnabled(false);
+        nextButton.setEnabled(false);
+
         // Initialisation du MediaPlayer
         if (mediaPlayer != null) {
             mediaPlayer.release();
@@ -101,6 +106,9 @@ public class PlayerActivity extends AppCompatActivity {
 
         mediaPlayer = new MediaPlayer();
         try {
+            // Afficher un message de chargement
+            currentTimeTextView.setText("Chargement...");
+
             mediaPlayer.setDataSource(track.mp3Url);
             mediaPlayer.prepareAsync();
 
@@ -108,7 +116,12 @@ public class PlayerActivity extends AppCompatActivity {
                 // Initialisation de la seekbar
                 seekBar.setMax(mediaPlayer.getDuration());
                 totalTimeTextView.setText(formatTime(mediaPlayer.getDuration()));
+                currentTimeTextView.setText("0:00");
+
+                // Activer tous les boutons
                 playPauseButton.setEnabled(true);
+                prevButton.setEnabled(true);
+                nextButton.setEnabled(true);
 
                 // Lancement automatique de la lecture
                 togglePlayPause();
@@ -121,8 +134,16 @@ public class PlayerActivity extends AppCompatActivity {
                 currentTimeTextView.setText("0:00");
             });
 
+            mediaPlayer.setOnErrorListener((mp, what, extra) -> {
+                // Gérer les erreurs de lecture
+                playPauseButton.setEnabled(false);
+                currentTimeTextView.setText("Erreur de lecture");
+                return true;
+            });
+
         } catch (IOException e) {
             e.printStackTrace();
+            currentTimeTextView.setText("Erreur: URL invalide");
         }
     }
 
@@ -206,6 +227,27 @@ public class PlayerActivity extends AppCompatActivity {
         long seconds = TimeUnit.MILLISECONDS.toSeconds(timeInMs) -
                 TimeUnit.MINUTES.toSeconds(minutes);
         return String.format(Locale.getDefault(), "%d:%02d", minutes, seconds);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (mediaPlayer != null && isPlaying) {
+            // Pause automatique quand l'activité est mise en pause
+            mediaPlayer.pause();
+            handler.removeCallbacks(updateSeekBar);
+            // Ne pas changer l'état de isPlaying pour reprendre la lecture au retour
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (mediaPlayer != null && isPlaying) {
+            // Reprendre la lecture si l'activité était en train de jouer avant d'être mise en pause
+            mediaPlayer.start();
+            updateSeekbar();
+        }
     }
 
     @Override

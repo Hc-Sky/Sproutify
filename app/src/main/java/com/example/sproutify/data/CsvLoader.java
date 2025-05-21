@@ -29,6 +29,7 @@ public final class CsvLoader {
 
     private static final OkHttpClient CLIENT = new OkHttpClient();
     private static final String BASE_IMG = "http://edu.info06.net/lyrics/images/";
+    private static final String BASE_MP3 = "http://edu.info06.net/lyrics/mp3/";
 
     private CsvLoader() { }
 
@@ -67,6 +68,7 @@ public final class CsvLoader {
             if (p.length < 8) continue;
 
             String coverUrl = BASE_IMG + p[4];
+            String mp3Url = BASE_MP3 + p[6];   // Construction de l'URL MP3 complète
 
             tracks.add(new Track(
                     p[0],         // title
@@ -75,7 +77,7 @@ public final class CsvLoader {
                     p[3],         // date
                     coverUrl,     // cover (URL complète)
                     p[5],         // contentLines
-                    p[6],         // mp3
+                    mp3Url,       // mp3 (URL complète)
                     p[7]          // duration
             ));
         }
