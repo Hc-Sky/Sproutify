@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/colorSurface">
+    android:background="@color/background_color">
 
     <!-- Barre d'application Material -->
     <com.google.android.material.appbar.MaterialToolbar
@@ -14,24 +14,33 @@
         android:layout_height="?attr/actionBarSize"
         app:layout_constraintTop_toTopOf="parent"
         app:navigationIcon="@drawable/ic_back"
+        app:titleTextColor="@color/text_primary"
         app:title="Lecteur" />
 
     <!-- Pochette de l'album -->
-    <ImageView
-        android:id="@+id/playerCoverImage"
-        android:layout_width="276dp"
-        android:layout_height="276dp"
+    <androidx.cardview.widget.CardView
+        android:id="@+id/coverCardView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
         android:layout_marginStart="40dp"
         android:layout_marginTop="40dp"
         android:layout_marginEnd="40dp"
-        android:contentDescription="Pochette de l'album"
-        android:scaleType="centerCrop"
-        android:transitionName="sharedCover"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="4dp"
         app:layout_constraintDimensionRatio="1:1"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/playerToolbar"
-        tools:src="@drawable/ic_album_placeholder" />
+        app:layout_constraintTop_toBottomOf="@id/playerToolbar">
+
+        <ImageView
+            android:id="@+id/playerCoverImage"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="Pochette de l'album"
+            android:scaleType="centerCrop"
+            android:transitionName="sharedCover"
+            tools:src="@drawable/ic_album_placeholder" />
+    </androidx.cardview.widget.CardView>
 
     <!-- Titre et artiste -->
     <TextView
@@ -45,11 +54,12 @@
         android:gravity="center"
         android:maxLines="1"
         android:textAppearance="?attr/textAppearanceHeadline6"
+        android:textColor="@color/text_primary"
         android:textSize="22sp"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/playerCoverImage"
+        app:layout_constraintTop_toBottomOf="@id/coverCardView"
         tools:text="Nom de la chanson" />
 
     <TextView
@@ -63,6 +73,7 @@
         android:gravity="center"
         android:maxLines="1"
         android:textAppearance="?attr/textAppearanceBody1"
+        android:textColor="@color/text_secondary"
         android:textSize="16sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -77,6 +88,8 @@
         android:layout_marginStart="24dp"
         android:layout_marginEnd="24dp"
         android:layout_marginBottom="16dp"
+        android:progressTint="@color/colorPrimary"
+        android:thumbTint="@color/colorPrimary"
         app:layout_constraintBottom_toTopOf="@id/playerTimeLayout"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
@@ -97,6 +110,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="0:00"
+            android:textColor="@color/text_secondary"
             android:textAppearance="?attr/textAppearanceCaption" />
 
         <View
@@ -109,6 +123,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="0:00"
+            android:textColor="@color/text_secondary"
             android:textAppearance="?attr/textAppearanceCaption" />
     </LinearLayout>
 
@@ -133,16 +148,18 @@
             android:layout_marginEnd="16dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="Morceau précédent"
+            android:tint="@color/text_primary"
             android:src="@drawable/ic_previous" />
 
-        <ImageButton
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/playerPlayPauseButton"
             android:layout_width="64dp"
             android:layout_height="64dp"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="Lecture/Pause"
+            android:backgroundTint="@color/colorPrimary"
+            app:tint="@android:color/white"
             android:src="@drawable/ic_play" />
 
         <ImageButton
@@ -152,7 +169,22 @@
             android:layout_marginStart="16dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="Morceau suivant"
+            android:tint="@color/text_primary"
             android:src="@drawable/ic_next" />
     </LinearLayout>
+
+    <!-- Bouton favori -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/playerFavoriteButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:src="@drawable/ic_favorite_border"
+        android:contentDescription="Ajouter aux favoris"
+        app:fabSize="mini"
+        app:backgroundTint="@color/card_background"
+        app:tint="@color/favorite_button_tint"
+        app:layout_constraintTop_toTopOf="@id/coverCardView"
+        app:layout_constraintEnd_toEndOf="@id/coverCardView" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

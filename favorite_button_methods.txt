@@ -1,0 +1,64 @@
+/**
+ * Cette classe contient des méthodes à ajouter à PlayerActivity.java
+ * pour gérer la fonctionnalité du bouton favori
+ */
+
+// À ajouter à la classe PlayerActivity après la méthode setupListeners()
+private void setupFavoriteButton() {
+    updateFavoriteButtonState();
+
+    favoriteButton.setOnClickListener(v -> {
+        boolean isFavorite = favoritesManager.toggleFavorite(currentTrack);
+        updateFavoriteButtonState();
+
+        // Afficher un message de confirmation
+        String message = isFavorite ?
+                "Ajouté aux favoris" :
+                "Retiré des favoris";
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+    });
+}
+
+private void updateFavoriteButtonState() {
+    boolean isFavorite = favoritesManager.isFavorite(currentTrack);
+    if (isFavorite) {
+        favoriteButton.setImageResource(R.drawable.ic_favorite_filled);
+        favoriteButton.getDrawable().setTint(getResources().getColor(R.color.favorite_active, getTheme()));
+    } else {
+        favoriteButton.setImageResource(R.drawable.ic_favorite_border);
+        favoriteButton.getDrawable().setTint(getResources().getColor(R.color.favorite_button_tint, getTheme()));
+    }
+}
+
+// Mise à jour des méthodes playPreviousTrack() et playNextTrack()
+// pour mettre à jour l'état du bouton favori lors du changement de morceau
+private void playPreviousTrack() {
+    // Éviter les actions multiples pendant le chargement
+    if (isLoading) return;
+
+    if (currentTrackPosition > 0) {
+        currentTrackPosition--;
+        currentTrack = trackList.get(currentTrackPosition);
+        setupPlayerWithTrack(currentTrack);
+        updateFavoriteButtonState(); // Mise à jour de l'état du bouton favori
+    } else {
+        // Si c'est la première piste, retour au début de la piste
+        if (mediaPlayer != null) {
+            mediaPlayer.seekTo(0);
+            seekBar.setProgress(0);
+            currentTimeTextView.setText("0:00");
+        }
+    }
+}
+
+private void playNextTrack() {
+    // Éviter les actions multiples pendant le chargement
+    if (isLoading) return;
+
+    if (currentTrackPosition < trackList.size() - 1) {
+        currentTrackPosition++;
+        currentTrack = trackList.get(currentTrackPosition);
+        setupPlayerWithTrack(currentTrack);
+        updateFavoriteButtonState(); // Mise à jour de l'état du bouton favori
+    }
+}

@@ -16,8 +16,10 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.sproutify.data.FavoritesManager;
 import com.example.sproutify.model.Track;
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,6 +45,7 @@ public class PlayerActivity extends AppCompatActivity {
     private Handler handler;
     private Runnable updateSeekBar;
     private boolean isLoading = false;
+    private FavoritesManager favoritesManager;
 
     // UI Components
     private ImageView coverImageView;
@@ -51,9 +54,10 @@ public class PlayerActivity extends AppCompatActivity {
     private SeekBar seekBar;
     private TextView currentTimeTextView;
     private TextView totalTimeTextView;
-    private ImageButton playPauseButton;
+    private FloatingActionButton playPauseButton;
     private ImageButton prevButton;
     private ImageButton nextButton;
+    private FloatingActionButton favoriteButton;
     private MaterialToolbar toolbar;
 
     private boolean isPlaying = false;
@@ -62,6 +66,9 @@ public class PlayerActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_player);
+
+        // Initialisation du gestionnaire de favoris
+        favoritesManager = FavoritesManager.getInstance(this);
 
         // Initialisation des composants UI
         coverImageView = findViewById(R.id.playerCoverImage);
@@ -73,6 +80,7 @@ public class PlayerActivity extends AppCompatActivity {
         playPauseButton = findViewById(R.id.playerPlayPauseButton);
         prevButton = findViewById(R.id.playerPrevButton);
         nextButton = findViewById(R.id.playerNextButton);
+        favoriteButton = findViewById(R.id.playerFavoriteButton);
         toolbar = findViewById(R.id.playerToolbar);
 
         // Configuration de la toolbar
@@ -106,6 +114,9 @@ public class PlayerActivity extends AppCompatActivity {
 
         // Configuration des listeners
         setupListeners();
+
+        // Configuration du bouton favoris
+        setupFavoriteButton();
     }
 
     private void setupPlayerWithTrack(Track track) {
@@ -233,6 +244,32 @@ public class PlayerActivity extends AppCompatActivity {
         nextButton.setOnClickListener(v -> playNextTrack());
     }
 
+    private void setupFavoriteButton() {
+        updateFavoriteButtonState();
+
+        favoriteButton.setOnClickListener(v -> {
+            boolean isFavorite = favoritesManager.toggleFavorite(currentTrack);
+            updateFavoriteButtonState();
+
+            // Afficher un message de confirmation
+            String message = isFavorite ?
+                    "Ajouté aux favoris" :
+                    "Retiré des favoris";
+            Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+        });
+    }
+
+    private void updateFavoriteButtonState() {
+        boolean isFavorite = favoritesManager.isFavorite(currentTrack);
+        if (isFavorite) {
+            favoriteButton.setImageResource(R.drawable.ic_favorite_filled);
+            favoriteButton.getDrawable().setTint(getResources().getColor(R.color.favorite_active, getTheme()));
+        } else {
+            favoriteButton.setImageResource(R.drawable.ic_favorite_border);
+            favoriteButton.getDrawable().setTint(getResources().getColor(R.color.favorite_button_tint, getTheme()));
+        }
+    }
+
     private void playPreviousTrack() {
         // Éviter les actions multiples pendant le chargement
         if (isLoading) return;
@@ -241,6 +278,7 @@ public class PlayerActivity extends AppCompatActivity {
             currentTrackPosition--;
             currentTrack = trackList.get(currentTrackPosition);
             setupPlayerWithTrack(currentTrack);
+            updateFavoriteButtonState(); // Mise à jour de l'état du bouton favori
         } else {
             // Si c'est la première piste, retour au début de la piste
             if (mediaPlayer != null) {
@@ -259,6 +297,7 @@ public class PlayerActivity extends AppCompatActivity {
             currentTrackPosition++;
             currentTrack = trackList.get(currentTrackPosition);
             setupPlayerWithTrack(currentTrack);
+            updateFavoriteButtonState(); // Mise à jour de l'état du bouton favori
         }
     }
 

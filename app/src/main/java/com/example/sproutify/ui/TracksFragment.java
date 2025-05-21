@@ -111,4 +111,12 @@ public class TracksFragment extends Fragment implements TrackAdapter.OnTrackFavo
         // Mettre à jour la liste quand un favori change (surtout important pour l'onglet favoris)
         updateTracks(allTracks);
     }
+
+    /**
+     * Retourne la position du fragment (0 pour Accueil, 1 pour Favoris)
+     * @return position du fragment
+     */
+    public int getFragmentPosition() {
+        return showFavorites ? 1 : 0;
+    }
 }

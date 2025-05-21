@@ -40,6 +40,16 @@ public class MainActivity extends AppCompatActivity implements TrackAdapter.OnTr
         pagerAdapter = new MainPagerAdapter(this);
         viewPager.setAdapter(pagerAdapter);
 
+        // Ajout d'un listener pour détecter les changements d'onglets
+        viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+            @Override
+            public void onPageSelected(int position) {
+                super.onPageSelected(position);
+                // Mise à jour de l'onglet sélectionné (important pour l'onglet favoris)
+                updateCurrentFragment();
+            }
+        });
+
         // Configuration des onglets avec TabLayoutMediator
         new TabLayoutMediator(tabLayout, viewPager, (tab, position) -> {
             switch (position) {
@@ -59,12 +69,28 @@ public class MainActivity extends AppCompatActivity implements TrackAdapter.OnTr
 
     private void updateTracks(List<Track> tracks) {
         allTracks = tracks;
+        updateAllFragments();
+    }
 
-        // Mise à jour des fragments
+    // Méthode pour mettre à jour tous les fragments
+    private void updateAllFragments() {
         for (int i = 0; i < getSupportFragmentManager().getFragments().size(); i++) {
             if (getSupportFragmentManager().getFragments().get(i) instanceof TracksFragment) {
                 ((TracksFragment) getSupportFragmentManager().getFragments().get(i))
-                        .updateTracks(tracks);
+                        .updateTracks(allTracks);
+            }
+        }
+    }
+
+    // Méthode pour mettre à jour uniquement le fragment actuellement visible
+    private void updateCurrentFragment() {
+        int currentPosition = viewPager.getCurrentItem();
+        for (int i = 0; i < getSupportFragmentManager().getFragments().size(); i++) {
+            if (getSupportFragmentManager().getFragments().get(i) instanceof TracksFragment &&
+                    ((TracksFragment) getSupportFragmentManager().getFragments().get(i)).getFragmentPosition() == currentPosition) {
+                ((TracksFragment) getSupportFragmentManager().getFragments().get(i))
+                        .updateTracks(allTracks);
+                break;
             }
         }
     }
@@ -85,7 +111,7 @@ public class MainActivity extends AppCompatActivity implements TrackAdapter.OnTr
 
         // Mettre à jour les fragments car l'état des favoris peut avoir changé
         if (allTracks != null && !allTracks.isEmpty()) {
-            updateTracks(allTracks);
+            updateCurrentFragment();
         }
     }
 }
