@@ -1,79 +1,86 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/itemRoot"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:minHeight="72dp"
-    android:paddingStart="16dp"
-    android:paddingEnd="12dp"
-    android:paddingTop="8dp"
-    android:paddingBottom="8dp"
-    android:clickable="true"
+    android:layout_marginStart="8dp"
+    android:layout_marginEnd="8dp"
+    android:layout_marginTop="4dp"
+    android:layout_marginBottom="4dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="2dp"
+    app:cardBackgroundColor="@color/card_background"
     android:foreground="?attr/selectableItemBackground">
 
-    <!-- Pochette -->
-    <ImageView
-        android:id="@+id/imageCover"
-        android:layout_width="56dp"
-        android:layout_height="56dp"
-        android:scaleType="centerCrop"
-        android:contentDescription="@string/cover_art"
-        android:src="@drawable/ic_album_placeholder"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent" />
-
-    <!-- Titre -->
-    <TextView
-        android:id="@+id/textTitle"
-        android:layout_width="0dp"
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:ellipsize="end"
-        android:maxLines="1"
-        android:text="Titre du morceau"
-        android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-        android:textColor="@android:color/black"
-        app:layout_constraintStart_toEndOf="@id/imageCover"
-        app:layout_constraintEnd_toStartOf="@id/iconMore"
-        app:layout_constraintTop_toTopOf="@id/imageCover"
-        app:layout_constraintHorizontal_bias="0"
-        android:layout_marginStart="16dp" />
+        android:minHeight="80dp"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp">
 
-    <!-- Ligne secondaire : icônes + artiste -->
-    <LinearLayout
-        android:id="@+id/layoutMeta"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        app:layout_constraintStart_toStartOf="@id/textTitle"
-        app:layout_constraintEnd_toStartOf="@id/iconMore"
-        app:layout_constraintTop_toBottomOf="@id/textTitle"
-        android:layout_marginTop="4dp">
+        <!-- Pochette -->
+        <ImageView
+            android:id="@+id/imageCover"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:scaleType="centerCrop"
+            android:contentDescription="@string/cover_art"
+            android:src="@drawable/ic_album_placeholder"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:elevation="2dp" />
+
+        <!-- Titre -->
+        <TextView
+            android:id="@+id/textTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="Titre du morceau"
+            android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+            android:textColor="@android:color/white"
+            app:layout_constraintStart_toEndOf="@id/imageCover"
+            app:layout_constraintEnd_toStartOf="@id/btnFavorite"
+            app:layout_constraintTop_toTopOf="@id/imageCover"
+            app:layout_constraintHorizontal_bias="0"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="4dp" />
 
         <!-- Artiste(s) -->
         <TextView
             android:id="@+id/textArtist"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="6dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="4dp"
             android:ellipsize="end"
             android:maxLines="1"
-            android:text="Nom de l’artiste"
+            android:text="Nom de l'artiste"
             android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-            android:textColor="#B3B3B3" />
-    </LinearLayout>
+            android:textColor="#B3B3B3"
+            app:layout_constraintStart_toEndOf="@id/imageCover"
+            app:layout_constraintEnd_toStartOf="@id/btnFavorite"
+            app:layout_constraintTop_toBottomOf="@id/textTitle" />
 
-    <ImageView
-        android:id="@+id/iconMore"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:src="@drawable/ic_more_vert"
-        android:contentDescription="@string/more_options"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:tint="@android:color/white" />
+        <!-- Bouton Favoris -->
+        <ImageButton
+            android:id="@+id/btnFavorite"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:src="@drawable/ic_favorite_border"
+            android:contentDescription="Ajouter aux favoris"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:tint="@color/favorite_button_tint" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</com.google.android.material.card.MaterialCardView>

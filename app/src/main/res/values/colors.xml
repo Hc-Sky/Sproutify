@@ -2,4 +2,20 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- Couleurs principales de l'application -->
+    <color name="colorPrimary">#1DB954</color>
+    <color name="colorPrimaryDark">#1A9742</color>
+    <color name="colorAccent">#1ED760</color>
+
+    <!-- Couleurs de fond -->
+    <color name="background_color">#121212</color>
+    <color name="card_background">#282828</color>
+
+    <!-- Couleurs texte et icônes -->
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#B3B3B3</color>
+    <color name="favorite_button_tint">#1DB954</color>
+    <color name="favorite_active">#E91E63</color>
 </resources>
+
