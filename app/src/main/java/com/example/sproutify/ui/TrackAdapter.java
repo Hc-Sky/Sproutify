@@ -19,7 +19,7 @@ import java.util.List;
 public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.TrackVH> {
 
     public interface OnTrackClickListener {
-        void onTrackClick(Track track, ImageView sharedCover);
+        void onTrackClick(Track track, int position);
     }
 
     private final List<Track> data;
@@ -50,7 +50,7 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.TrackVH> {
                 .into(h.cover);
 
         h.itemView.setOnClickListener(v ->
-                listener.onTrackClick(t, h.cover));
+                listener.onTrackClick(t, pos));
     }
 
 
@@ -73,4 +73,7 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.TrackVH> {
         notifyDataSetChanged();
     }
 
+    public List<Track> getTracks() {
+        return data;
+    }
 }

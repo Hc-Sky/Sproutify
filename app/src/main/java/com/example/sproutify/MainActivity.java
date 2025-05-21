@@ -29,10 +29,12 @@ public class MainActivity extends AppCompatActivity {
         rv.setLayoutManager(new LinearLayoutManager(this));
         rv.setHasFixedSize(true);
 
-        adapter = new TrackAdapter(this, new ArrayList<>(), (track, img) -> {
-            // Lancement de PlayerActivity avec le morceau sélectionné
+        adapter = new TrackAdapter(this, new ArrayList<>(), (track, position) -> {
+            // Lancement de PlayerActivity avec le morceau sélectionné et la liste complète
             Intent intent = new Intent(this, PlayerActivity.class);
             intent.putExtra(PlayerActivity.EXTRA_TRACK, track);
+            intent.putParcelableArrayListExtra(PlayerActivity.EXTRA_TRACK_LIST, new ArrayList<>(adapter.getTracks()));
+            intent.putExtra(PlayerActivity.EXTRA_TRACK_POSITION, position);
             startActivity(intent);
         });
         rv.setAdapter(adapter);

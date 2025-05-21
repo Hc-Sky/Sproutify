@@ -6,11 +6,13 @@ import android.media.MediaPlayer;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -22,17 +24,25 @@ import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 public class PlayerActivity extends AppCompatActivity {
 
+    private static final String TAG = "PlayerActivity";
     public static final String EXTRA_TRACK = "track";
+    public static final String EXTRA_TRACK_LIST = "track_list";
+    public static final String EXTRA_TRACK_POSITION = "track_position";
 
     private Track currentTrack;
+    private List<Track> trackList = new ArrayList<>();
+    private int currentTrackPosition = 0;
     private MediaPlayer mediaPlayer;
     private Handler handler;
     private Runnable updateSeekBar;
+    private boolean isLoading = false;
 
     // UI Components
     private ImageView coverImageView;
@@ -71,9 +81,21 @@ public class PlayerActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayShowHomeEnabled(true);
         toolbar.setNavigationOnClickListener(v -> finish());
 
-        // Récupération du morceau depuis l'intent
+        // Récupération du morceau et de la liste des morceaux depuis l'intent
         if (getIntent().hasExtra(EXTRA_TRACK)) {
             currentTrack = getIntent().getParcelableExtra(EXTRA_TRACK);
+
+            // Récupération de la liste complète des morceaux si disponible
+            if (getIntent().hasExtra(EXTRA_TRACK_LIST)) {
+                trackList = getIntent().getParcelableArrayListExtra(EXTRA_TRACK_LIST);
+                currentTrackPosition = getIntent().getIntExtra(EXTRA_TRACK_POSITION, 0);
+            } else {
+                // Si on n'a qu'un morceau unique, créer une liste avec ce seul morceau
+                trackList = new ArrayList<>();
+                trackList.add(currentTrack);
+                currentTrackPosition = 0;
+            }
+
             setupPlayerWithTrack(currentTrack);
         } else {
             finish(); // Terminer l'activité si aucun morceau n'est fourni
@@ -87,41 +109,51 @@ public class PlayerActivity extends AppCompatActivity {
     }
 
     private void setupPlayerWithTrack(Track track) {
+        // Marquer comme en cours de chargement
+        isLoading = true;
+
         // Affichage des informations du morceau
         titleTextView.setText(track.title);
         artistTextView.setText(track.artist);
 
-        // Chargement de la pochette avec AsyncTask au lieu de Picasso
+        // Chargement de la pochette avec AsyncTask
         new LoadImageTask(coverImageView).execute(track.coverUrl);
 
-        // Désactiver les boutons jusqu'à ce que le mediaPlayer soit prêt
+        // Afficher un message de chargement
+        currentTimeTextView.setText("Chargement...");
+        totalTimeTextView.setText("--:--");
+
+        // Désactiver tous les boutons pendant le chargement
         playPauseButton.setEnabled(false);
         prevButton.setEnabled(false);
         nextButton.setEnabled(false);
+        seekBar.setEnabled(false);
+        seekBar.setProgress(0);
 
-        // Initialisation du MediaPlayer
-        if (mediaPlayer != null) {
-            mediaPlayer.release();
-        }
+        // Libérer les ressources MediaPlayer précédentes
+        releaseMediaPlayer();
 
+        // Initialisation d'un nouveau MediaPlayer
         mediaPlayer = new MediaPlayer();
         try {
-            // Afficher un message de chargement
-            currentTimeTextView.setText("Chargement...");
-
             mediaPlayer.setDataSource(track.mp3Url);
-            mediaPlayer.prepareAsync();
 
             mediaPlayer.setOnPreparedListener(mp -> {
+                if (isFinishing()) return;  // Éviter les crash si l'activité est détruite
+
                 // Initialisation de la seekbar
                 seekBar.setMax(mediaPlayer.getDuration());
                 totalTimeTextView.setText(formatTime(mediaPlayer.getDuration()));
                 currentTimeTextView.setText("0:00");
+                seekBar.setEnabled(true);
 
-                // Activer tous les boutons
+                // Activer les boutons selon la position dans la liste
                 playPauseButton.setEnabled(true);
-                prevButton.setEnabled(true);
-                nextButton.setEnabled(true);
+                prevButton.setEnabled(currentTrackPosition > 0);
+                nextButton.setEnabled(currentTrackPosition < trackList.size() - 1);
+
+                // Marquer comme chargé
+                isLoading = false;
 
                 // Lancement automatique de la lecture
                 togglePlayPause();
@@ -132,18 +164,40 @@ public class PlayerActivity extends AppCompatActivity {
                 isPlaying = false;
                 seekBar.setProgress(0);
                 currentTimeTextView.setText("0:00");
+
+                // Passer automatiquement à la piste suivante si disponible
+                if (currentTrackPosition < trackList.size() - 1) {
+                    playNextTrack();
+                }
             });
 
             mediaPlayer.setOnErrorListener((mp, what, extra) -> {
+                Log.e(TAG, "MediaPlayer error: what=" + what + ", extra=" + extra);
+
                 // Gérer les erreurs de lecture
+                if (isFinishing()) return true;  // Ignore les erreurs si l'activité est détruite
+
+                // Afficher message d'erreur
                 playPauseButton.setEnabled(false);
                 currentTimeTextView.setText("Erreur de lecture");
+                Toast.makeText(PlayerActivity.this,
+                               "Erreur lors de la lecture de " + track.title,
+                               Toast.LENGTH_SHORT).show();
+
+                // Marquer comme chargé pour éviter les blocs
+                isLoading = false;
+
                 return true;
             });
 
+            // Préparer le MediaPlayer de manière asynchrone
+            mediaPlayer.prepareAsync();
+
         } catch (IOException e) {
+            Log.e(TAG, "Error setting data source", e);
             e.printStackTrace();
             currentTimeTextView.setText("Erreur: URL invalide");
+            isLoading = false;
         }
     }
 
@@ -172,29 +226,44 @@ public class PlayerActivity extends AppCompatActivity {
             }
         });
 
-        // Pour simuler les fonctionnalités précédent/suivant
-        // (dans une vraie application, ces boutons navigueraient entre les morceaux)
-        prevButton.setOnClickListener(v -> {
+        // Gestion du bouton précédent
+        prevButton.setOnClickListener(v -> playPreviousTrack());
+
+        // Gestion du bouton suivant
+        nextButton.setOnClickListener(v -> playNextTrack());
+    }
+
+    private void playPreviousTrack() {
+        // Éviter les actions multiples pendant le chargement
+        if (isLoading) return;
+
+        if (currentTrackPosition > 0) {
+            currentTrackPosition--;
+            currentTrack = trackList.get(currentTrackPosition);
+            setupPlayerWithTrack(currentTrack);
+        } else {
+            // Si c'est la première piste, retour au début de la piste
             if (mediaPlayer != null) {
                 mediaPlayer.seekTo(0);
                 seekBar.setProgress(0);
                 currentTimeTextView.setText("0:00");
             }
-        });
+        }
+    }
 
-        nextButton.setOnClickListener(v -> {
-            // Dans une implémentation réelle, on passerait au morceau suivant
-            // Pour l'exemple, on simule la fin du morceau
-            if (mediaPlayer != null) {
-                mediaPlayer.seekTo(mediaPlayer.getDuration());
-                playPauseButton.setImageResource(R.drawable.ic_play);
-                isPlaying = false;
-            }
-        });
+    private void playNextTrack() {
+        // Éviter les actions multiples pendant le chargement
+        if (isLoading) return;
+
+        if (currentTrackPosition < trackList.size() - 1) {
+            currentTrackPosition++;
+            currentTrack = trackList.get(currentTrackPosition);
+            setupPlayerWithTrack(currentTrack);
+        }
     }
 
     private void togglePlayPause() {
-        if (mediaPlayer != null) {
+        if (mediaPlayer != null && !isLoading) {
             if (isPlaying) {
                 // Pause
                 mediaPlayer.pause();
@@ -211,14 +280,35 @@ public class PlayerActivity extends AppCompatActivity {
     }
 
     private void updateSeekbar() {
-        if (mediaPlayer != null) {
-            int currentPosition = mediaPlayer.getCurrentPosition();
-            seekBar.setProgress(currentPosition);
-            currentTimeTextView.setText(formatTime(currentPosition));
+        if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+            try {
+                int currentPosition = mediaPlayer.getCurrentPosition();
+                seekBar.setProgress(currentPosition);
+                currentTimeTextView.setText(formatTime(currentPosition));
 
-            // Mise à jour toutes les 100ms
-            updateSeekBar = () -> updateSeekbar();
-            handler.postDelayed(updateSeekBar, 100);
+                // Mise à jour toutes les 100ms
+                updateSeekBar = () -> updateSeekbar();
+                handler.postDelayed(updateSeekBar, 100);
+            } catch (IllegalStateException e) {
+                Log.e(TAG, "Error updating seekbar", e);
+            }
+        }
+    }
+
+    private void releaseMediaPlayer() {
+        if (mediaPlayer != null) {
+            try {
+                if (mediaPlayer.isPlaying()) {
+                    mediaPlayer.stop();
+                }
+                mediaPlayer.reset();
+                mediaPlayer.release();
+                mediaPlayer = null;
+                isPlaying = false;
+                handler.removeCallbacks(updateSeekBar);
+            } catch (Exception e) {
+                Log.e(TAG, "Error releasing MediaPlayer", e);
+            }
         }
     }
 
@@ -253,20 +343,14 @@ public class PlayerActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (mediaPlayer != null) {
-            handler.removeCallbacks(updateSeekBar);
-            mediaPlayer.release();
-            mediaPlayer = null;
-        }
+        releaseMediaPlayer();
     }
 
     // AsyncTask pour charger les images sans utiliser Picasso
     private static class LoadImageTask extends AsyncTask<String, Void, Bitmap> {
-        private final ImageView imageView;
         private final WeakReference<ImageView> imageViewReference;
 
         public LoadImageTask(ImageView imageView) {
-            this.imageView = imageView;
             this.imageViewReference = new WeakReference<>(imageView);
         }
 
@@ -296,6 +380,7 @@ public class PlayerActivity extends AppCompatActivity {
                 }
             } else {
                 // En cas d'erreur, afficher une image par défaut
+                ImageView imageView = imageViewReference.get();
                 if (imageView != null) {
                     imageView.setImageResource(R.drawable.ic_album_placeholder);
                 }
