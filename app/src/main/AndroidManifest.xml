@@ -25,7 +25,12 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".PlayerActivity"
+            android:parentActivityName=".MainActivity"
+            android:label="Lecteur" />
 
     </application>
 
 </manifest>
+

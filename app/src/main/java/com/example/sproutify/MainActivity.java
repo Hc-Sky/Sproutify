@@ -1,5 +1,6 @@
 package com.example.sproutify;
 
+import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -28,8 +29,11 @@ public class MainActivity extends AppCompatActivity {
         rv.setLayoutManager(new LinearLayoutManager(this));
         rv.setHasFixedSize(true);
 
-        adapter = new TrackAdapter(this, new ArrayList<>(), (t, img) -> {
-            // TODO : ouverture LyricsActivity
+        adapter = new TrackAdapter(this, new ArrayList<>(), (track, img) -> {
+            // Lancement de PlayerActivity avec le morceau sélectionné
+            Intent intent = new Intent(this, PlayerActivity.class);
+            intent.putExtra(PlayerActivity.EXTRA_TRACK, track);
+            startActivity(intent);
         });
         rv.setAdapter(adapter);
 
