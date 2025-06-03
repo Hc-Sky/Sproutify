@@ -103,6 +103,8 @@ public class MainActivity extends AppCompatActivity implements TrackAdapter.OnTr
         intent.putParcelableArrayListExtra(PlayerActivity.EXTRA_TRACK_LIST, new ArrayList<>(allTracks));
         intent.putExtra(PlayerActivity.EXTRA_TRACK_POSITION, position);
         startActivity(intent);
+        // Ajouter une animation de transition
+        overridePendingTransition(R.anim.slide_in_up, R.anim.slide_out_down);
     }
 
     @Override

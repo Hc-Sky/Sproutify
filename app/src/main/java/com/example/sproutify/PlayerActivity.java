@@ -541,4 +541,11 @@ public class PlayerActivity extends AppCompatActivity {
             }
         }
     }
+
+    @Override
+    public void finish() {
+        super.finish();
+        // Ajouter une animation de transition lors du retour
+        overridePendingTransition(R.anim.slide_in_down, R.anim.slide_out_up);
+    }
 }
