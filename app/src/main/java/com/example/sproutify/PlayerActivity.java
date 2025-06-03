@@ -1,13 +1,18 @@
 package com.example.sproutify;
 
+import android.animation.AnimatorInflater;
+import android.animation.ObjectAnimator;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.AnimationDrawable;
 import android.media.MediaPlayer;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
@@ -47,6 +52,18 @@ public class PlayerActivity extends AppCompatActivity {
     private boolean isLoading = false;
     private FavoritesManager favoritesManager;
 
+    // Animations
+    private Animation rotateAnimation;
+    private Animation pulseAnimation;
+    private AnimationDrawable equalizerAnimation;
+    private ImageView equalizerView;
+
+    // Animations de transition
+    private Animation slideOutLeft;
+    private Animation slideInRight;
+    private Animation slideOutRight;
+    private Animation slideInLeft;
+
     // UI Components
     private ImageView coverImageView;
     private TextView titleTextView;
@@ -84,6 +101,10 @@ public class PlayerActivity extends AppCompatActivity {
         nextButton = findViewById(R.id.playerNextButton);
         favoriteButton = findViewById(R.id.playerFavoriteButton);
         toolbar = findViewById(R.id.playerToolbar);
+        equalizerView = findViewById(R.id.playerEqualizer);
+
+        // Initialisation des animations
+        setupAnimations();
 
         // Configuration de la toolbar
         setSupportActionBar(toolbar);
@@ -129,24 +150,154 @@ public class PlayerActivity extends AppCompatActivity {
         updateFavoriteButton();
     }
 
-    private void updateUI() {
-        titleTextView.setText(currentTrack.title);
-        artistTextView.setText(currentTrack.artist);
+    private void setupAnimations() {
+        // Animation de vue (View Animation) - Rotation de la pochette d'album
+        rotateAnimation = AnimationUtils.loadAnimation(this, R.anim.rotate_album_art);
 
-        // Affichage des paroles si disponibles
-        if (currentTrack.contentLines != null && !currentTrack.contentLines.isEmpty()) {
-            lyricsTextView.setText(currentTrack.contentLines);
-            lyricsTextView.setVisibility(View.VISIBLE);
-        } else {
-            lyricsTextView.setText("Aucune parole disponible");
-            lyricsTextView.setVisibility(View.VISIBLE);
+        // Animation de vue (View Animation) - Pulsation des boutons
+        pulseAnimation = AnimationUtils.loadAnimation(this, R.anim.pulse_animation);
+
+        // Animation image par image (Frame Animation) - Égaliseur
+        equalizerAnimation = (AnimationDrawable) equalizerView.getDrawable();
+
+        // Animations de transition pour le changement de piste
+        slideOutLeft = AnimationUtils.loadAnimation(this, R.anim.slide_out_left);
+        slideInRight = AnimationUtils.loadAnimation(this, R.anim.slide_in_right);
+        slideOutRight = AnimationUtils.loadAnimation(this, R.anim.slide_out_right);
+        slideInLeft = AnimationUtils.loadAnimation(this, R.anim.slide_in_left);
+
+        // Configurer les écouteurs d'animation pour enchaîner les animations
+        slideOutLeft.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {}
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                // Quand l'animation de sortie est terminée, lancer l'animation d'entrée
+                animateNextCover();
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {}
+        });
+
+        slideOutRight.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {}
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                // Quand l'animation de sortie est terminée, lancer l'animation d'entrée
+                animatePreviousCover();
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {}
+        });
+    }
+
+    private void setupButtons() {
+        // Bouton lecture/pause
+        playPauseButton.setOnClickListener(view -> {
+            // Appliquer l'animation de pulsation au bouton
+            view.startAnimation(pulseAnimation);
+
+            if (isLoading) return;
+
+            if (isPlaying) {
+                pausePlayback();
+            } else {
+                resumePlayback();
+            }
+        });
+
+        // Bouton précédent
+        prevButton.setOnClickListener(view -> {
+            // Appliquer l'animation de pulsation au bouton
+            view.startAnimation(pulseAnimation);
+
+            playPreviousTrack();
+        });
+
+        // Bouton suivant
+        nextButton.setOnClickListener(view -> {
+            // Appliquer l'animation de pulsation au bouton
+            view.startAnimation(pulseAnimation);
+
+            playNextTrack();
+        });
+
+        // Bouton favori
+        favoriteButton.setOnClickListener(view -> {
+            // L'animation est gérée dans toggleFavoriteStatus()
+            toggleFavoriteStatus();
+        });
+    }
+
+    /**
+     * Démarre toutes les animations quand la musique joue
+     */
+    private void startAnimations() {
+        // Animation image par image (Frame Animation)
+        if (equalizerAnimation != null && !equalizerAnimation.isRunning()) {
+            equalizerAnimation.start();
         }
 
-        // Chargement de l'image
-        if (currentTrack.coverUrl != null && !currentTrack.coverUrl.isEmpty()) {
-            new LoadImageTask(coverImageView).execute(currentTrack.coverUrl);
-        } else {
-            coverImageView.setImageResource(R.drawable.ic_launcher_background);
+        // On ne démarre plus l'animation de rotation de la pochette
+    }
+
+    /**
+     * Arrête toutes les animations quand la musique est en pause
+     */
+    private void stopAnimations() {
+        // Animation image par image (Frame Animation)
+        if (equalizerAnimation != null && equalizerAnimation.isRunning()) {
+            equalizerAnimation.stop();
+        }
+
+        // Animation de vue (View Animation)
+        if (coverImageView != null) {
+            coverImageView.clearAnimation();
+        }
+    }
+
+    /**
+     * Applique l'animation ObjectAnimator sur le bouton favori
+     */
+    private void animateFavoriteButton() {
+        // ObjectAnimator (Property Animation)
+        android.animation.AnimatorSet favoriteAnim = (android.animation.AnimatorSet)
+            AnimatorInflater.loadAnimator(this, R.animator.favorite_button_animation);
+        favoriteAnim.setTarget(favoriteButton);
+        favoriteAnim.start();
+    }
+
+    private void toggleFavoriteStatus() {
+        boolean isFavorite = favoritesManager.toggleFavorite(currentTrack);
+        updateFavoriteButton();
+
+        // Ajouter l'animation du bouton favori
+        animateFavoriteButton();
+    }
+
+    private void pausePlayback() {
+        if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+            mediaPlayer.pause();
+            isPlaying = false;
+            playPauseButton.setImageResource(R.drawable.ic_play);
+            // Arrêter les animations quand la musique est en pause
+            stopAnimations();
+        }
+    }
+
+    private void resumePlayback() {
+        if (mediaPlayer != null && !mediaPlayer.isPlaying()) {
+            mediaPlayer.start();
+            isPlaying = true;
+            playPauseButton.setImageResource(R.drawable.ic_pause);
+            updateSeekBar();
+            // Démarrer les animations quand la musique joue
+            startAnimations();
         }
     }
 
@@ -170,11 +321,17 @@ public class PlayerActivity extends AppCompatActivity {
 
                 // Démarrer la mise à jour du SeekBar
                 updateSeekBar();
+
+                // Démarrer les animations
+                startAnimations();
             });
 
             mediaPlayer.setOnCompletionListener(mp -> {
                 isPlaying = false;
                 playPauseButton.setImageResource(R.drawable.ic_play);
+
+                // Arrêter les animations à la fin de la piste
+                stopAnimations();
 
                 // Passer à la chanson suivante si possible
                 if (trackList.size() > 1) {
@@ -194,6 +351,65 @@ public class PlayerActivity extends AppCompatActivity {
             isLoading = false;
             Log.e(TAG, "Erreur lors du chargement de la piste: " + e.getMessage());
             Toast.makeText(this, "Erreur lors du chargement de la piste", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void playPreviousTrack() {
+        if (trackList.size() <= 1) return;
+
+        animateToPreviousTrack();
+    }
+
+    private void playNextTrack() {
+        if (trackList.size() <= 1) return;
+
+        animateToNextTrack();
+    }
+
+    private void updateFavoriteButton() {
+        boolean isFavorite = favoritesManager.isFavorite(currentTrack);
+        if (isFavorite) {
+            favoriteButton.setImageResource(R.drawable.ic_favorite_filled);
+        } else {
+            favoriteButton.setImageResource(R.drawable.ic_favorite_border);
+        }
+    }
+
+    private void updateSeekBar() {
+        if (mediaPlayer != null && isPlaying) {
+            seekBar.setProgress(mediaPlayer.getCurrentPosition());
+            currentTimeTextView.setText(formatDuration(mediaPlayer.getCurrentPosition()));
+
+            handler.postDelayed(this::updateSeekBar, 1000);
+        }
+    }
+
+    private String formatDuration(long duration) {
+        return String.format(Locale.getDefault(), "%02d:%02d",
+                TimeUnit.MILLISECONDS.toMinutes(duration),
+                TimeUnit.MILLISECONDS.toSeconds(duration) -
+                TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(duration))
+        );
+    }
+
+    private void updateUI() {
+        titleTextView.setText(currentTrack.title);
+        artistTextView.setText(currentTrack.artist);
+
+        // Affichage des paroles si disponibles
+        if (currentTrack.contentLines != null && !currentTrack.contentLines.isEmpty()) {
+            lyricsTextView.setText(currentTrack.contentLines);
+            lyricsTextView.setVisibility(View.VISIBLE);
+        } else {
+            lyricsTextView.setText("Aucune parole disponible");
+            lyricsTextView.setVisibility(View.VISIBLE);
+        }
+
+        // Chargement de l'image
+        if (currentTrack.coverUrl != null && !currentTrack.coverUrl.isEmpty()) {
+            new LoadImageTask(coverImageView).execute(currentTrack.coverUrl);
+        } else {
+            coverImageView.setImageResource(R.drawable.ic_album_placeholder);
         }
     }
 
@@ -219,60 +435,52 @@ public class PlayerActivity extends AppCompatActivity {
         });
     }
 
-    private void updateSeekBar() {
-        if (mediaPlayer != null && isPlaying) {
-            seekBar.setProgress(mediaPlayer.getCurrentPosition());
-            currentTimeTextView.setText(formatDuration(mediaPlayer.getCurrentPosition()));
-
-            handler.postDelayed(() -> {
-                updateSeekBar();
-            }, 1000);
-        }
+    /**
+     * Démarre l'animation de glissement de la pochette vers la piste suivante
+     */
+    private void animateToNextTrack() {
+        // On arrête la rotation d'abord
+        coverImageView.clearAnimation();
+        // On lance l'animation de sortie par la gauche
+        coverImageView.startAnimation(slideOutLeft);
     }
 
-    private void setupButtons() {
-        // Bouton lecture/pause
-        playPauseButton.setOnClickListener(view -> {
-            if (isLoading) return;
-
-            if (isPlaying) {
-                pausePlayback();
-            } else {
-                resumePlayback();
-            }
-        });
-
-        // Bouton précédent
-        prevButton.setOnClickListener(view -> {
-            playPreviousTrack();
-        });
-
-        // Bouton suivant
-        nextButton.setOnClickListener(view -> {
-            playNextTrack();
-        });
-
-        // Bouton favori
-        favoriteButton.setOnClickListener(view -> {
-            toggleFavoriteStatus();
-        });
+    /**
+     * Démarre l'animation de glissement de la pochette vers la piste précédente
+     */
+    private void animateToPreviousTrack() {
+        // On arrête la rotation d'abord
+        coverImageView.clearAnimation();
+        // On lance l'animation de sortie par la droite
+        coverImageView.startAnimation(slideOutRight);
     }
 
-    private void playPreviousTrack() {
-        if (trackList.size() <= 1) return;
-
-        currentTrackPosition--;
-        if (currentTrackPosition < 0) {
-            currentTrackPosition = trackList.size() - 1;
-        }
-
-        currentTrack = trackList.get(currentTrackPosition);
-        updateUI();
-        loadAndPlayTrack();
-        updateFavoriteButton();
+    /**
+     * Appelée après que l'animation de sortie vers la gauche soit terminée
+     * pour afficher la nouvelle pochette qui arrive par la droite
+     */
+    private void animateNextCover() {
+        // On passe à la piste suivante (sans animation pour éviter une boucle)
+        changeToNextTrack();
+        // On démarre l'animation d'entrée par la droite
+        coverImageView.startAnimation(slideInRight);
     }
 
-    private void playNextTrack() {
+    /**
+     * Appelée après que l'animation de sortie vers la droite soit terminée
+     * pour afficher la nouvelle pochette qui arrive par la gauche
+     */
+    private void animatePreviousCover() {
+        // On passe à la piste précédente (sans animation pour éviter une boucle)
+        changeToPreviousTrack();
+        // On démarre l'animation d'entrée par la gauche
+        coverImageView.startAnimation(slideInLeft);
+    }
+
+    /**
+     * Change à la piste suivante sans animation (utilisée par l'animation)
+     */
+    private void changeToNextTrack() {
         if (trackList.size() <= 1) return;
 
         currentTrackPosition++;
@@ -286,65 +494,21 @@ public class PlayerActivity extends AppCompatActivity {
         updateFavoriteButton();
     }
 
-    private void pausePlayback() {
-        if (mediaPlayer != null && mediaPlayer.isPlaying()) {
-            mediaPlayer.pause();
-            isPlaying = false;
-            playPauseButton.setImageResource(R.drawable.ic_play);
-        }
-    }
+    /**
+     * Change à la piste précédente sans animation (utilisée par l'animation)
+     */
+    private void changeToPreviousTrack() {
+        if (trackList.size() <= 1) return;
 
-    private void resumePlayback() {
-        if (mediaPlayer != null && !mediaPlayer.isPlaying()) {
-            mediaPlayer.start();
-            isPlaying = true;
-            playPauseButton.setImageResource(R.drawable.ic_pause);
-            updateSeekBar();
+        currentTrackPosition--;
+        if (currentTrackPosition < 0) {
+            currentTrackPosition = trackList.size() - 1;
         }
-    }
 
-    private void toggleFavoriteStatus() {
-        boolean isFavorite = favoritesManager.toggleFavorite(currentTrack);
+        currentTrack = trackList.get(currentTrackPosition);
+        updateUI();
+        loadAndPlayTrack();
         updateFavoriteButton();
-    }
-
-    private void updateFavoriteButton() {
-        boolean isFavorite = favoritesManager.isFavorite(currentTrack);
-        if (isFavorite) {
-            favoriteButton.setImageResource(R.drawable.ic_favorite_filled);
-        } else {
-            favoriteButton.setImageResource(R.drawable.ic_favorite_border);
-        }
-    }
-
-    private String formatDuration(long duration) {
-        return String.format(Locale.getDefault(), "%02d:%02d",
-                TimeUnit.MILLISECONDS.toMinutes(duration),
-                TimeUnit.MILLISECONDS.toSeconds(duration) -
-                TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(duration))
-        );
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        pausePlayback();
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (mediaPlayer != null) {
-            if (mediaPlayer.isPlaying()) {
-                mediaPlayer.stop();
-            }
-            mediaPlayer.release();
-            mediaPlayer = null;
-        }
-
-        if (handler != null) {
-            handler.removeCallbacksAndMessages(null);
-        }
     }
 
     // Classe AsyncTask pour charger les images

@@ -39,6 +39,7 @@
                 android:layout_marginEnd="40dp"
                 app:cardCornerRadius="8dp"
                 app:cardElevation="4dp"
+                app:cardBackgroundColor="#000000"
                 app:layout_constraintDimensionRatio="1:1"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -53,6 +54,18 @@
                     android:transitionName="sharedCover"
                     tools:src="@drawable/ic_album_placeholder" />
             </androidx.cardview.widget.CardView>
+
+            <!-- Icône égaliseur pour animation image par image -->
+            <ImageView
+                android:id="@+id/playerEqualizer"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginTop="8dp"
+                android:contentDescription="Égaliseur musical"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/coverCardView"
+                android:src="@drawable/music_equalizer_animation" />
 
             <!-- Titre et artiste -->
             <TextView
@@ -71,7 +84,7 @@
                 android:textStyle="bold"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/coverCardView"
+                app:layout_constraintTop_toBottomOf="@id/playerEqualizer"
                 tools:text="Nom de la chanson" />
 
             <TextView
