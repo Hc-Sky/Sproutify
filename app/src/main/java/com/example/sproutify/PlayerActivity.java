@@ -691,9 +691,9 @@ public class PlayerActivity extends AppCompatActivity {
         if (bound && musicService != null) {
             Track previousTrack = queueManager.getPreviousTrack();
             if (previousTrack != null) {
-                queueManager.moveToPrevious();
-                playTrack(previousTrack);
-                updateQueueUI();
+                // Lancer l'animation de glissement vers la droite
+                animateToPreviousTrack();
+                // La lecture de la piste précédente sera déclenchée par l'animation
             }
         }
     }
@@ -702,9 +702,9 @@ public class PlayerActivity extends AppCompatActivity {
         if (bound && musicService != null) {
             Track nextTrack = queueManager.getNextTrack();
             if (nextTrack != null) {
-                queueManager.moveToNext();
-                playTrack(nextTrack);
-                updateQueueUI();
+                // Lancer l'animation de glissement vers la gauche
+                animateToNextTrack();
+                // La lecture de la piste suivante sera déclenchée par l'animation
             }
         }
     }
@@ -873,7 +873,12 @@ public class PlayerActivity extends AppCompatActivity {
         Log.d(TAG, "animateNextCover: Début de l'animation d'entrée de la nouvelle pochette");
 
         // Mise à jour de l'interface avec la nouvelle piste
-        updateUI();
+        Track nextTrack = queueManager.getNextTrack();
+        if (nextTrack != null) {
+            queueManager.moveToNext();
+            playTrack(nextTrack);
+            updateQueueUI();
+        }
 
         // Démarrer l'animation d'entrée par la droite
         coverImageView.startAnimation(slideInRight);
@@ -887,7 +892,12 @@ public class PlayerActivity extends AppCompatActivity {
         Log.d(TAG, "animatePreviousCover: Début de l'animation d'entrée de la nouvelle pochette");
 
         // Mise à jour de l'interface avec la nouvelle piste
-        updateUI();
+        Track previousTrack = queueManager.getPreviousTrack();
+        if (previousTrack != null) {
+            queueManager.moveToPrevious();
+            playTrack(previousTrack);
+            updateQueueUI();
+        }
 
         // Démarrer l'animation d'entrée par la gauche
         coverImageView.startAnimation(slideInLeft);
