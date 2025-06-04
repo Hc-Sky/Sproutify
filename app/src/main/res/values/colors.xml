@@ -1,26 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="purple_200">#FFBB86FC</color>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
-
-    <!-- Couleurs principales de l'application -->
-    <color name="colorPrimary">@color/purple_500</color>
-    <color name="colorPrimaryDark">@color/purple_700</color>
-    <color name="colorAccent">@color/teal_200</color>
-
+    <!-- Couleurs principales -->
+    <color name="primary">#1DB954</color>          <!-- Vert Spotify -->
+    <color name="primary_dark">#1AA34A</color>     <!-- Vert plus foncé -->
+    <color name="primary_light">#1ED760</color>    <!-- Vert plus clair -->
+    <color name="accent">#1DB954</color>           <!-- Accent vert -->
+    
     <!-- Couleurs de fond -->
-    <color name="background_color">@color/white</color>
-    <color name="card_background">#282828</color>
+    <color name="background">#121212</color>       <!-- Noir profond -->
+    <color name="surface">#1E1E1E</color>          <!-- Noir légèrement plus clair -->
+    <color name="card_background">#282828</color>  <!-- Fond des cartes -->
+    
+    <!-- Couleurs de texte -->
+    <color name="text_primary">#FFFFFF</color>     <!-- Texte principal blanc -->
+    <color name="text_secondary">#B3B3B3</color>   <!-- Texte secondaire gris clair -->
+    <color name="text_hint">#757575</color>        <!-- Texte d'indication gris -->
+    
+    <!-- Couleurs système -->
+    <color name="black">#000000</color>
+    <color name="white">#FFFFFF</color>
+    <color name="transparent">#00000000</color>
+    
+    <!-- Couleurs d'état -->
+    <color name="error">#CF6679</color>            <!-- Rouge d'erreur -->
+    <color name="success">#4CAF50</color>          <!-- Vert de succès -->
+    <color name="warning">#FFC107</color>          <!-- Orange d'avertissement -->
 
-    <!-- Couleurs texte et icônes -->
-    <color name="text_primary">@color/black</color>
-    <color name="text_secondary">#757575</color>
-    <color name="favorite_button_tint">#1DB954</color>
-    <color name="favorite_active">#E91E63</color>
+    <!-- Couleurs spécifiques -->
+    <color name="favorite_button_tint">#FF4081</color>
+    <color name="favorite_active">#FF4081</color>
 </resources>
 

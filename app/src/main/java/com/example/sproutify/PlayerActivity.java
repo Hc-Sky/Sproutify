@@ -2,6 +2,7 @@ package com.example.sproutify;
 
 import android.animation.AnimatorInflater;
 import android.animation.ObjectAnimator;
+import android.animation.AnimatorSet;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -28,6 +29,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.bumptech.glide.Glide;
 import com.example.sproutify.data.FavoritesManager;
 import com.example.sproutify.data.MusicPlayerState;
 import com.example.sproutify.model.Track;
@@ -154,7 +156,7 @@ public class PlayerActivity extends AppCompatActivity {
         handler = new Handler(Looper.getMainLooper());
 
         // Initialisation des composants UI
-        coverImageView = findViewById(R.id.playerCoverImage);
+        coverImageView = findViewById(R.id.coverImage);
         titleTextView = findViewById(R.id.playerTrackTitle);
         artistTextView = findViewById(R.id.playerArtistName);
         lyricsTextView = findViewById(R.id.playerLyricsText);
@@ -268,6 +270,9 @@ public class PlayerActivity extends AppCompatActivity {
         if (handler != null && updateSeekBar != null) {
             handler.removeCallbacks(updateSeekBar);
         }
+        if (coverImageView != null) {
+            coverImageView.clearAnimation();
+        }
     }
 
     private void setupEventListeners() {
@@ -309,6 +314,7 @@ public class PlayerActivity extends AppCompatActivity {
     private void setupAnimations() {
         // Animation de vue (View Animation) - Rotation de la pochette d'album
         rotateAnimation = AnimationUtils.loadAnimation(this, R.anim.rotate_album_art);
+        rotateAnimation.setRepeatCount(Animation.INFINITE);
 
         // Animation de vue (View Animation) - Pulsation des boutons
         pulseAnimation = AnimationUtils.loadAnimation(this, R.anim.pulse_animation);
@@ -349,6 +355,23 @@ public class PlayerActivity extends AppCompatActivity {
 
             @Override
             public void onAnimationRepeat(Animation animation) {}
+        });
+
+        // Application des animations
+        playPauseButton.setOnClickListener(v -> {
+            if (isPlaying) {
+                coverImageView.clearAnimation();
+                equalizerView.setVisibility(View.GONE);
+            } else {
+                coverImageView.startAnimation(rotateAnimation);
+                equalizerView.setVisibility(View.VISIBLE);
+            }
+            isPlaying = !isPlaying;
+            updatePlayPauseButton();
+        });
+        
+        favoriteButton.setOnClickListener(v -> {
+            toggleFavorite();
         });
     }
 
@@ -719,8 +742,10 @@ public class PlayerActivity extends AppCompatActivity {
         boolean isFavorite = favoritesManager.isFavorite(currentTrack);
         if (isFavorite) {
             favoriteButton.setImageResource(R.drawable.ic_favorite_filled);
+            favoriteButton.setColorFilter(getColor(R.color.favorite_button_tint));
         } else {
             favoriteButton.setImageResource(R.drawable.ic_favorite_border);
+            favoriteButton.setColorFilter(getColor(R.color.primary));
         }
     }
 
@@ -780,11 +805,14 @@ public class PlayerActivity extends AppCompatActivity {
                 if (coverImageView != null) {
                     if (currentTrack.coverUrl != null && !currentTrack.coverUrl.isEmpty()) {
                         Log.d(TAG, "updateUI: Chargement de l'image de couverture - " + currentTrack.coverUrl);
+                        // Utiliser la même approche que dans MainActivity
                         new LoadImageTask(coverImageView).execute(currentTrack.coverUrl);
                     } else {
-                        coverImageView.setImageResource(R.drawable.ic_album_placeholder);
-                        Log.d(TAG, "updateUI: Image de couverture par défaut utilisée");
+                        coverImageView.setImageResource(R.drawable.album_placeholder);
+                        Log.d(TAG, "updateUI: URL de couverture vide, image par défaut affichée");
                     }
+                } else {
+                    Log.e(TAG, "updateUI: coverImageView est null");
                 }
 
                 // Mise à jour du bouton favori
