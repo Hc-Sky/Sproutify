@@ -658,6 +658,9 @@ public class PlayerActivity extends AppCompatActivity {
             Log.d(TAG, "playPreviousTrack: Lecture piste précédente");
             Log.d(TAG, "playPreviousTrack: Position actuelle: " + currentTrackPosition + ", Taille liste: " + trackList.size());
             
+            // Déclenche l'animation de sortie de la pochette actuelle
+            coverImageView.startAnimation(slideOutRight);
+
             if (currentTrackPosition > 0) {
                 currentTrackPosition--;
             } else {
@@ -674,11 +677,10 @@ public class PlayerActivity extends AppCompatActivity {
             MusicPlayerState.getInstance().setCurrentTrack(currentTrack);
             MusicPlayerState.getInstance().setCurrentTrackPosition(currentTrackPosition);
             
-            // Mettre à jour l'interface avant de jouer la piste
-            updateUI();
+            // Mettre à jour l'état du bouton favori
             updateFavoriteButton();
             
-            // Jouer la piste
+            // Jouer la piste - L'interface sera mise à jour une fois l'animation terminée
             musicService.playTrack(currentTrack);
             Log.d(TAG, "playPreviousTrack: Piste précédente chargée et en cours de lecture");
         } catch (Exception e) {
@@ -703,6 +705,9 @@ public class PlayerActivity extends AppCompatActivity {
             Log.d(TAG, "playNextTrack: Lecture piste suivante");
             Log.d(TAG, "playNextTrack: Position actuelle: " + currentTrackPosition + ", Taille liste: " + trackList.size());
             
+            // Déclenche l'animation de sortie de la pochette actuelle
+            coverImageView.startAnimation(slideOutLeft);
+
             if (currentTrackPosition < trackList.size() - 1) {
                 currentTrackPosition++;
             } else {
@@ -719,11 +724,10 @@ public class PlayerActivity extends AppCompatActivity {
             MusicPlayerState.getInstance().setCurrentTrack(currentTrack);
             MusicPlayerState.getInstance().setCurrentTrackPosition(currentTrackPosition);
             
-            // Mettre à jour l'interface avant de jouer la piste
-            updateUI();
+            // Mettre à jour l'état du bouton favori
             updateFavoriteButton();
             
-            // Jouer la piste
+            // Jouer la piste - L'interface sera mise à jour une fois l'animation terminée
             musicService.playTrack(currentTrack);
             Log.d(TAG, "playNextTrack: Piste suivante chargée et en cours de lecture");
         } catch (Exception e) {
@@ -893,9 +897,12 @@ public class PlayerActivity extends AppCompatActivity {
      * pour afficher la nouvelle pochette qui arrive par la droite
      */
     private void animateNextCover() {
-        // On passe à la piste suivante (sans animation pour éviter une boucle)
-        changeToNextTrack();
-        // On démarre l'animation d'entrée par la droite
+        Log.d(TAG, "animateNextCover: Début de l'animation d'entrée de la nouvelle pochette");
+
+        // Mise à jour de l'interface avec la nouvelle piste
+        updateUI();
+
+        // Démarrer l'animation d'entrée par la droite
         coverImageView.startAnimation(slideInRight);
     }
 
@@ -904,9 +911,12 @@ public class PlayerActivity extends AppCompatActivity {
      * pour afficher la nouvelle pochette qui arrive par la gauche
      */
     private void animatePreviousCover() {
-        // On passe à la piste précédente (sans animation pour éviter une boucle)
-        changeToPreviousTrack();
-        // On démarre l'animation d'entrée par la gauche
+        Log.d(TAG, "animatePreviousCover: Début de l'animation d'entrée de la nouvelle pochette");
+
+        // Mise à jour de l'interface avec la nouvelle piste
+        updateUI();
+
+        // Démarrer l'animation d'entrée par la gauche
         coverImageView.startAnimation(slideInLeft);
     }
 
