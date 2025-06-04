@@ -2,4 +2,7 @@
     <string name="app_name">Sproutify</string>
     <string name="cover_art">Pochette de l’album</string>
     <string name="more_options">Plus d’options</string>
+    <string name="previous_track">Previous track</string>
+    <string name="play_pause">Play/Pause</string>
+    <string name="next_track">Next track</string>
 </resources>

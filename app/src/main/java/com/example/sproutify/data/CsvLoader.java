@@ -2,6 +2,7 @@ package com.example.sproutify.data;
 
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
 import com.example.sproutify.model.Track;
 
@@ -18,10 +19,12 @@ import okhttp3.Response;
 
 /**
  * Télécharge et parse le CSV distant.
- * Utilisation :
+ * Utilisation :
  * CsvLoader.fetch("http://edu.info06.net/lyrics/lyrics.csv", list -> { ... });
  */
 public final class CsvLoader {
+
+    private static final String TAG = "CsvLoader";
 
     public interface OnCsvLoaded {
         void onResult(List<Track> tracks);
@@ -56,7 +59,7 @@ public final class CsvLoader {
         });
     }
 
-    /* Parse CSV brut ; délimiteur #, première ligne = header */
+    /* Parse CSV brut ; délimiteur #, première ligne = header */
     private static List<Track> parse(String csv) {
         List<Track> tracks = new ArrayList<>();
         String[] lines = csv.split("\n");
@@ -68,17 +71,23 @@ public final class CsvLoader {
             if (p.length < 8) continue;
 
             String coverUrl = BASE_IMG + p[4];
-            String mp3Url = BASE_MP3 + p[6];   // Construction de l'URL MP3 complète
+
+            // Construction de l'URL MP3 complète avec le nom du fichier (pas l'ID)
+            String mp3Url = BASE_MP3 + p[6];
+
+            // Log de l'URL pour débogage
+            Log.d(TAG, "Création d'une piste avec URL MP3: " + mp3Url);
 
             tracks.add(new Track(
-                    p[0],         // title
-                    p[1],         // album
-                    p[2],         // artist
-                    p[3],         // date
-                    coverUrl,     // cover (URL complète)
-                    p[5],         // contentLines
-                    mp3Url,       // mp3 (URL complète)
-                    p[7]          // duration
+                    String.valueOf(i),  // id (using line number as ID)
+                    p[0],              // title
+                    p[1],              // album
+                    p[2],              // artist
+                    p[3],              // date
+                    coverUrl,          // cover (URL complète)
+                    p[5],              // contentLines
+                    mp3Url,            // mp3 (URL complète)
+                    p[7]               // duration
             ));
         }
         return tracks;
