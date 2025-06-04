@@ -112,73 +112,56 @@ public class MusicService extends Service {
     }
 
     public void playTrack(Track track) {
+        if (track == null) {
+            Log.e(TAG, "playTrack: Track is null");
+            return;
+        }
+
+        Log.d(TAG, "playTrack: Début de la lecture de " + track.title);
+        
         try {
-            Log.d(TAG, "playTrack: Début de la méthode - Track: " + track.title);
-            Log.d(TAG, "playTrack: URL de la piste: " + track.mp3Url);
-            
-            if (track.mp3Url == null || track.mp3Url.isEmpty()) {
-                Log.e(TAG, "playTrack: URL de la piste est null ou vide");
+            // Mettre à jour le MusicPlayerState
+            MusicPlayerState.getInstance().setCurrentTrack(track);
+            MusicPlayerState.getInstance().setPlaying(true);
+
+            // Préparer le MediaPlayer
+            if (mediaPlayer != null) {
+                mediaPlayer.release();
+            }
+            mediaPlayer = new MediaPlayer();
+            mediaPlayer.setDataSource(this, Uri.parse(track.mp3Url));
+            mediaPlayer.prepareAsync();
+            isPrepared = false;
+
+            mediaPlayer.setOnPreparedListener(mp -> {
+                isPrepared = true;
+                mp.start();
                 if (playbackListener != null) {
-                    playbackListener.onError("URL de la piste invalide");
+                    playbackListener.onPlaybackStateChanged(true);
+                    playbackListener.onTrackChanged(track);
                 }
-                return;
-            }
+            });
 
-            // Arrêter la lecture en cours si nécessaire
-            if (mediaPlayer != null && mediaPlayer.isPlaying()) {
-                mediaPlayer.stop();
-            }
-
-            reset();
-            Log.d(TAG, "playTrack: MediaPlayer réinitialisé");
-
-            try {
-                Log.d(TAG, "playTrack: Tentative de configuration de la source audio");
-                mediaPlayer.setDataSource(track.mp3Url);
-                Log.d(TAG, "playTrack: Source audio configurée avec succès");
-            } catch (IOException e) {
-                Log.e(TAG, "playTrack: Erreur lors de la configuration de la source audio", e);
+            mediaPlayer.setOnCompletionListener(mp -> {
                 if (playbackListener != null) {
-                    playbackListener.onError("Erreur lors de la configuration de la source audio: " + e.getMessage());
+                    playbackListener.onPlaybackStateChanged(false);
                 }
-                return;
-            }
+                playNext();
+            });
 
-            try {
-                Log.d(TAG, "playTrack: Début de la préparation asynchrone");
-                mediaPlayer.prepareAsync();
-                Log.d(TAG, "playTrack: Préparation asynchrone lancée");
-                
-                // Forcer le démarrage de la lecture après la préparation
-                mediaPlayer.setOnPreparedListener(mp -> {
-                    Log.d(TAG, "onPrepared: MediaPlayer est prêt à jouer");
-                    isPrepared = true;
-                    try {
-                        Log.d(TAG, "onPrepared: Démarrage de la lecture");
-                        mediaPlayer.start();
-                        Log.d(TAG, "onPrepared: Lecture démarrée avec succès");
-                        if (playbackListener != null) {
-                            playbackListener.onPlaybackStateChanged(true);
-                        }
-                    } catch (Exception e) {
-                        Log.e(TAG, "onPrepared: Erreur lors du démarrage de la lecture", e);
-                        if (playbackListener != null) {
-                            playbackListener.onError("Erreur lors du démarrage de la lecture: " + e.getMessage());
-                        }
-                    }
-                });
-            } catch (Exception e) {
-                Log.e(TAG, "playTrack: Erreur lors de la préparation", e);
+            mediaPlayer.setOnErrorListener((mp, what, extra) -> {
+                String errorMessage = "Erreur de lecture: " + what;
+                Log.e(TAG, errorMessage);
                 if (playbackListener != null) {
-                    playbackListener.onError("Erreur lors de la préparation: " + e.getMessage());
+                    playbackListener.onError(errorMessage);
                 }
-                return;
-            }
+                return false;
+            });
 
-        } catch (Exception e) {
-            Log.e(TAG, "playTrack: Erreur générale lors de la lecture", e);
+        } catch (IOException e) {
+            Log.e(TAG, "playTrack: Erreur lors de la préparation de la piste", e);
             if (playbackListener != null) {
-                playbackListener.onError("Erreur générale: " + e.getMessage());
+                playbackListener.onError("Erreur lors de la préparation de la piste: " + e.getMessage());
             }
         }
     }
@@ -294,7 +277,17 @@ public class MusicService extends Service {
         if (nextTrack != null) {
             Log.d(TAG, "playNext: Piste suivante trouvée - " + nextTrack.title);
             QueueManager.getInstance().moveToNext();
+            
+            // Mettre à jour le MusicPlayerState avant de jouer la piste
+            MusicPlayerState.getInstance().setCurrentTrack(nextTrack);
+            MusicPlayerState.getInstance().setPlaying(true);
+            
             playTrack(nextTrack);
+            
+            // Notifier le changement de piste
+            if (playbackListener != null) {
+                playbackListener.onTrackChanged(nextTrack);
+            }
         } else {
             Log.d(TAG, "playNext: Aucune piste suivante disponible");
         }
@@ -306,7 +299,17 @@ public class MusicService extends Service {
         if (previousTrack != null) {
             Log.d(TAG, "playPrevious: Piste précédente trouvée - " + previousTrack.title);
             QueueManager.getInstance().moveToPrevious();
+            
+            // Mettre à jour le MusicPlayerState avant de jouer la piste
+            MusicPlayerState.getInstance().setCurrentTrack(previousTrack);
+            MusicPlayerState.getInstance().setPlaying(true);
+            
             playTrack(previousTrack);
+            
+            // Notifier le changement de piste
+            if (playbackListener != null) {
+                playbackListener.onTrackChanged(previousTrack);
+            }
         } else {
             Log.d(TAG, "playPrevious: Aucune piste précédente disponible");
         }

@@ -69,6 +69,32 @@ public class MainActivity extends AppCompatActivity implements TrackAdapter.OnTr
             MusicService.MusicBinder binder = (MusicService.MusicBinder) service;
             musicService = binder.getService();
             bound = true;
+            
+            // Ajouter le listener pour les changements de piste
+            musicService.setPlaybackListener(new MusicService.OnPlaybackStateChangeListener() {
+                @Override
+                public void onPlaybackStateChanged(boolean playing) {
+                    runOnUiThread(() -> {
+                        MusicPlayerState.getInstance().setPlaying(playing);
+                        updateMiniPlayer();
+                    });
+                }
+
+                @Override
+                public void onError(String errorMessage) {
+                    Log.e(TAG, "Playback error: " + errorMessage);
+                }
+
+                @Override
+                public void onTrackChanged(Track track) {
+                    runOnUiThread(() -> {
+                        MusicPlayerState.getInstance().setCurrentTrack(track);
+                        updateMiniPlayer();
+                    });
+                }
+            });
+            
+            // Mise à jour initiale
             updateMiniPlayer();
         }
 
@@ -308,48 +334,44 @@ public class MainActivity extends AppCompatActivity implements TrackAdapter.OnTr
      * Vérifie s'il y a une musique en cours et met à jour le mini lecteur
      */
     private void checkAndUpdateMiniPlayer() {
-        try {
-            MusicPlayerState playerState = MusicPlayerState.getInstance();
-
-            if (miniPlayerLayout == null) {
-                Log.e(TAG, "checkAndUpdateMiniPlayer: miniPlayerLayout is null");
-                return;
-            }
-
-            if (playerState.hasTrack()) {
-                // Il y a une piste en cours, afficher le mini lecteur
-                updateMiniPlayerUI(playerState.getCurrentTrack(), playerState.isPlaying());
-                miniPlayerLayout.setVisibility(View.VISIBLE);
-            } else {
-                // Pas de piste en cours, cacher le mini lecteur
-                miniPlayerLayout.setVisibility(View.GONE);
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "checkAndUpdateMiniPlayer: Error updating mini player", e);
+        if (bound && musicService != null) {
+            updateMiniPlayer();
         }
     }
 
     /**
      * Met à jour l'interface du mini lecteur
      */
-    private void updateMiniPlayerUI(Track track, boolean isPlaying) {
-        // Mettre à jour les informations textuelles
-        miniPlayerTitle.setText(track.title);
-        miniPlayerArtist.setText(track.artist);
-
-        // Mettre à jour l'icône du bouton play/pause
-        if (isPlaying) {
-            miniPlayerPlayPause.setImageResource(R.drawable.ic_pause);
-        } else {
-            miniPlayerPlayPause.setImageResource(R.drawable.ic_play);
+    private void updateMiniPlayer() {
+        if (!bound || musicService == null) {
+            return;
         }
 
+        Track currentTrack = MusicPlayerState.getInstance().getCurrentTrack();
+        if (currentTrack == null) {
+            miniPlayerLayout.setVisibility(View.GONE);
+            return;
+        }
+
+        // Afficher le mini lecteur
+        miniPlayerLayout.setVisibility(View.VISIBLE);
+
+        // Mettre à jour les informations textuelles
+        miniPlayerTitle.setText(currentTrack.title);
+        miniPlayerArtist.setText(currentTrack.artist);
+
+        // Mettre à jour l'icône play/pause
+        boolean isPlaying = musicService.isPlaying();
+        miniPlayerPlayPause.setImageResource(isPlaying ? R.drawable.ic_pause : R.drawable.ic_play);
+
         // Charger l'image de couverture
-        if (track.coverUrl != null && !track.coverUrl.isEmpty()) {
-            new LoadImageTask(miniPlayerCover).execute(track.coverUrl);
+        if (currentTrack.coverUrl != null && !currentTrack.coverUrl.isEmpty()) {
+            new LoadImageTask(miniPlayerCover).execute(currentTrack.coverUrl);
         } else {
             miniPlayerCover.setImageResource(R.drawable.placeholder_album);
         }
+
+        Log.d(TAG, "Mini player updated - Track: " + currentTrack.title + ", Playing: " + isPlaying);
     }
 
     /**
@@ -364,22 +386,6 @@ public class MainActivity extends AppCompatActivity implements TrackAdapter.OnTr
             Track currentTrack = MusicPlayerState.getInstance().getCurrentTrack();
             if (currentTrack != null) {
                 openFullPlayer();
-            }
-        }
-    }
-
-    private void updateMiniPlayer() {
-        if (bound && musicService != null) {
-            Track currentTrack = MusicPlayerState.getInstance().getCurrentTrack();
-            if (currentTrack != null) {
-                miniPlayerLayout.setVisibility(View.VISIBLE);
-                miniPlayerTitle.setText(currentTrack.title);
-                miniPlayerArtist.setText(currentTrack.artist);
-                miniPlayerPlayPause.setImageResource(
-                    musicService.isPlaying() ? R.drawable.ic_pause : R.drawable.ic_play
-                );
-            } else {
-                miniPlayerLayout.setVisibility(View.GONE);
             }
         }
     }
