@@ -551,31 +551,19 @@ public class PlayerActivity extends AppCompatActivity {
     }
 
     private void loadAndPlayTrack() {
-        if (currentTrack == null || bound || musicService == null) {
+        if (currentTrack == null || !bound || musicService == null) {
+            Log.e(TAG, "loadAndPlayTrack: Conditions non remplies - currentTrack: " + (currentTrack != null) + 
+                  ", bound: " + bound + ", musicService: " + (musicService != null));
             return;
         }
 
         try {
-            isLoading = true;
-            updatePlayPauseButton();
-
-            // Mettre à jour le QueueManager
-            queueManager.setQueue(trackList, currentTrackPosition);
-
             Log.d(TAG, "loadAndPlayTrack: Début de la méthode");
             
             if (isLoading) {
-                Log.d(TAG, "loadAndPlayTrack: Déjà en cours de chargement");
-                return;
+                Log.d(TAG, "loadAndPlayTrack: Déjà en cours de chargement, réinitialisation");
+                isLoading = false;
             }
-            
-            if (currentTrack == null) {
-                Log.e(TAG, "loadAndPlayTrack: Aucune piste sélectionnée");
-                return;
-            }
-            
-            Log.d(TAG, "loadAndPlayTrack: Track à jouer - Titre: " + currentTrack.title);
-            Log.d(TAG, "loadAndPlayTrack: URL: " + currentTrack.mp3Url);
             
             isLoading = true;
             Log.d(TAG, "loadAndPlayTrack: État de chargement mis à true");
@@ -662,15 +650,14 @@ public class PlayerActivity extends AppCompatActivity {
                 }
             });
 
-            // Si nous avons une position de lecture, on ne relance pas la lecture
-            if (!shouldResumeFromPosition) {
-                // Réinitialiser le lecteur et lancer la lecture
-                musicService.reset();
-                Log.d(TAG, "loadAndPlayTrack: Lecteur réinitialisé");
-                musicService.playTrack(currentTrack);
-                Log.d(TAG, "loadAndPlayTrack: Démarrage de la lecture");
-            } else {
-                // On se contente de mettre à jour l'interface
+            // Réinitialiser le lecteur et lancer la lecture
+            musicService.reset();
+            Log.d(TAG, "loadAndPlayTrack: Lecteur réinitialisé");
+            musicService.playTrack(currentTrack);
+            Log.d(TAG, "loadAndPlayTrack: Démarrage de la lecture");
+
+            // Si nous avons une position de lecture, on se positionne à cet endroit
+            if (shouldResumeFromPosition) {
                 Log.d(TAG, "loadAndPlayTrack: Reprise de la lecture à la position " + currentPosition);
                 musicService.seekTo(currentPosition);
             }

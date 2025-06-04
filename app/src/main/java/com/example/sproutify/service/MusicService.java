@@ -124,6 +124,11 @@ public class MusicService extends Service {
                 return;
             }
 
+            // Arrêter la lecture en cours si nécessaire
+            if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+                mediaPlayer.stop();
+            }
+
             reset();
             Log.d(TAG, "playTrack: MediaPlayer réinitialisé");
 
@@ -143,6 +148,25 @@ public class MusicService extends Service {
                 Log.d(TAG, "playTrack: Début de la préparation asynchrone");
                 mediaPlayer.prepareAsync();
                 Log.d(TAG, "playTrack: Préparation asynchrone lancée");
+                
+                // Forcer le démarrage de la lecture après la préparation
+                mediaPlayer.setOnPreparedListener(mp -> {
+                    Log.d(TAG, "onPrepared: MediaPlayer est prêt à jouer");
+                    isPrepared = true;
+                    try {
+                        Log.d(TAG, "onPrepared: Démarrage de la lecture");
+                        mediaPlayer.start();
+                        Log.d(TAG, "onPrepared: Lecture démarrée avec succès");
+                        if (playbackListener != null) {
+                            playbackListener.onPlaybackStateChanged(true);
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "onPrepared: Erreur lors du démarrage de la lecture", e);
+                        if (playbackListener != null) {
+                            playbackListener.onError("Erreur lors du démarrage de la lecture: " + e.getMessage());
+                        }
+                    }
+                });
             } catch (Exception e) {
                 Log.e(TAG, "playTrack: Erreur lors de la préparation", e);
                 if (playbackListener != null) {
@@ -265,18 +289,26 @@ public class MusicService extends Service {
     }
 
     public void playNext() {
+        Log.d(TAG, "playNext: Début de la méthode");
         Track nextTrack = QueueManager.getInstance().getNextTrack();
         if (nextTrack != null) {
+            Log.d(TAG, "playNext: Piste suivante trouvée - " + nextTrack.title);
             QueueManager.getInstance().moveToNext();
             playTrack(nextTrack);
+        } else {
+            Log.d(TAG, "playNext: Aucune piste suivante disponible");
         }
     }
 
     public void playPrevious() {
+        Log.d(TAG, "playPrevious: Début de la méthode");
         Track previousTrack = QueueManager.getInstance().getPreviousTrack();
         if (previousTrack != null) {
+            Log.d(TAG, "playPrevious: Piste précédente trouvée - " + previousTrack.title);
             QueueManager.getInstance().moveToPrevious();
             playTrack(previousTrack);
+        } else {
+            Log.d(TAG, "playPrevious: Aucune piste précédente disponible");
         }
     }
 

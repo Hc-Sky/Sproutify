@@ -4,6 +4,7 @@ import com.example.sproutify.model.Track;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import android.util.Log;
 
 public class QueueManager {
     private static QueueManager instance;
@@ -49,8 +50,10 @@ public class QueueManager {
     }
 
     public void updateQueueForNewTrack(Track newTrack) {
+        Log.d("QueueManager", "updateQueueForNewTrack: Début de la méthode - Track: " + newTrack.title);
+        
         if (queue.isEmpty()) {
-            // Si la file est vide, réinitialiser avec les 10 premiers morceaux
+            Log.d("QueueManager", "updateQueueForNewTrack: File vide, réinitialisation avec les 10 premiers morceaux");
             setBaseList(baseList);
             return;
         }
@@ -65,10 +68,10 @@ public class QueueManager {
         }
 
         if (newIndex != -1) {
-            // Si le morceau est trouvé dans la file
+            Log.d("QueueManager", "updateQueueForNewTrack: Morceau trouvé dans la file à l'index " + newIndex);
             currentIndex = newIndex;
         } else {
-            // Si le morceau n'est pas dans la file, l'ajouter au début
+            Log.d("QueueManager", "updateQueueForNewTrack: Morceau non trouvé dans la file, ajout au début");
             queue.add(0, newTrack);
             currentIndex = 0;
         }
@@ -147,23 +150,32 @@ public class QueueManager {
     }
 
     public Track getNextTrack() {
+        Log.d("QueueManager", "getNextTrack: Début de la méthode");
+        Log.d("QueueManager", "getNextTrack: Taille de la file: " + queue.size() + ", Index actuel: " + currentIndex);
+        
         // Si la file d'attente n'est pas vide, prendre la piste suivante
         if (!queue.isEmpty() && currentIndex + 1 < queue.size()) {
-            return queue.get(currentIndex + 1);
+            Track nextTrack = queue.get(currentIndex + 1);
+            Log.d("QueueManager", "getNextTrack: Piste suivante trouvée dans la file - " + nextTrack.title);
+            return nextTrack;
         }
         
         // Si la file d'attente est vide, prendre une piste de la liste de base
         if (!baseList.isEmpty()) {
             if (isShuffleMode) {
-                return baseList.get(random.nextInt(baseList.size()));
+                Track nextTrack = baseList.get(random.nextInt(baseList.size()));
+                Log.d("QueueManager", "getNextTrack: Piste aléatoire trouvée dans la liste de base - " + nextTrack.title);
+                return nextTrack;
             } else {
                 // Mode séquentiel : prendre la piste suivante de la liste de base
                 Track nextTrack = baseList.get(baseListIndex);
+                Log.d("QueueManager", "getNextTrack: Piste séquentielle trouvée dans la liste de base - " + nextTrack.title);
                 baseListIndex = (baseListIndex + 1) % baseList.size();
                 return nextTrack;
             }
         }
         
+        Log.d("QueueManager", "getNextTrack: Aucune piste suivante disponible");
         return null;
     }
 
@@ -183,10 +195,15 @@ public class QueueManager {
     }
 
     public void moveToNext() {
+        Log.d("QueueManager", "moveToNext: Début de la méthode");
+        Log.d("QueueManager", "moveToNext: Index actuel: " + currentIndex + ", Taille de la file: " + queue.size());
+        
         if (currentIndex + 1 < queue.size()) {
             currentIndex++;
+            Log.d("QueueManager", "moveToNext: Index mis à jour à " + currentIndex);
         } else if (!queue.isEmpty()) {
             // Si on est à la fin de la file d'attente, la vider
+            Log.d("QueueManager", "moveToNext: Fin de la file atteinte, vidage de la file");
             queue.clear();
             currentIndex = -1;
         }
