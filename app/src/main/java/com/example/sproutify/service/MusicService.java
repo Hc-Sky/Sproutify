@@ -9,6 +9,7 @@ import android.os.IBinder;
 import android.util.Log;
 
 import com.example.sproutify.data.MusicPlayerState;
+import com.example.sproutify.data.QueueManager;
 import com.example.sproutify.model.Track;
 
 import java.io.IOException;
@@ -75,6 +76,7 @@ public class MusicService extends Service {
                     Log.d(TAG, "onCompletion: Notification du listener");
                     playbackListener.onPlaybackStateChanged(false);
                 }
+                playNext();
             });
 
             mediaPlayer.setOnErrorListener((mp, what, extra) -> {
@@ -263,29 +265,27 @@ public class MusicService extends Service {
     }
 
     public void playNext() {
-        Track currentTrack = MusicPlayerState.getInstance().getCurrentTrack();
-        List<Track> trackList = MusicPlayerState.getInstance().getTrackList();
-        int currentPosition = MusicPlayerState.getInstance().getCurrentTrackPosition();
-
-        if (trackList != null && !trackList.isEmpty()) {
-            int nextPosition = (currentPosition + 1) % trackList.size();
-            Track nextTrack = trackList.get(nextPosition);
-            MusicPlayerState.getInstance().setCurrentTrackPosition(nextPosition);
+        Track nextTrack = QueueManager.getInstance().getNextTrack();
+        if (nextTrack != null) {
+            QueueManager.getInstance().moveToNext();
             playTrack(nextTrack);
         }
     }
 
     public void playPrevious() {
-        Track currentTrack = MusicPlayerState.getInstance().getCurrentTrack();
-        List<Track> trackList = MusicPlayerState.getInstance().getTrackList();
-        int currentPosition = MusicPlayerState.getInstance().getCurrentTrackPosition();
-
-        if (trackList != null && !trackList.isEmpty()) {
-            int previousPosition = (currentPosition - 1 + trackList.size()) % trackList.size();
-            Track previousTrack = trackList.get(previousPosition);
-            MusicPlayerState.getInstance().setCurrentTrackPosition(previousPosition);
+        Track previousTrack = QueueManager.getInstance().getPreviousTrack();
+        if (previousTrack != null) {
+            QueueManager.getInstance().moveToPrevious();
             playTrack(previousTrack);
         }
+    }
+
+    public void setShuffleMode(boolean shuffle) {
+        QueueManager.getInstance().setShuffleMode(shuffle);
+    }
+
+    public boolean isShuffleMode() {
+        return QueueManager.getInstance().isShuffleMode();
     }
 
     @Override

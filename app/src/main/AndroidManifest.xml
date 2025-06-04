@@ -36,6 +36,11 @@
             android:exported="false"
             android:theme="@style/Theme.Sproutify.NoActionBar" />
 
+        <activity
+            android:name=".TrackSelectionActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Sproutify.NoActionBar" />
+
         <service
             android:name=".service.MusicService"
             android:enabled="true"

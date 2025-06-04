@@ -125,36 +125,34 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="32dp"
+                android:orientation="horizontal"
                 android:gravity="center"
-                android:orientation="horizontal">
+                android:layout_marginBottom="32dp">
 
                 <ImageButton
                     android:id="@+id/playerPrevButton"
                     android:layout_width="48dp"
                     android:layout_height="48dp"
-                    android:layout_marginEnd="24dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
                     android:src="@drawable/ic_skip_previous"
-                    android:tint="@color/text_primary"/>
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/previous_track"/>
 
                 <com.google.android.material.floatingactionbutton.FloatingActionButton
                     android:id="@+id/playerPlayPauseButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="24dp"
                     android:src="@drawable/ic_play"
-                    app:backgroundTint="@color/primary"
-                    app:tint="@color/white"
-                    app:fabSize="normal"/>
+                    app:fabSize="normal"
+                    android:contentDescription="@string/play_pause"/>
 
                 <ImageButton
                     android:id="@+id/playerNextButton"
                     android:layout_width="48dp"
                     android:layout_height="48dp"
-                    android:layout_marginStart="24dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
                     android:src="@drawable/ic_skip_next"
-                    android:tint="@color/text_primary"/>
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/next_track"/>
 
             </LinearLayout>
 
@@ -187,6 +185,50 @@
 
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- File d'attente -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="File d'attente"
+                    android:textColor="@color/text_primary"
+                    android:textSize="20sp"
+                    android:textStyle="bold"/>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/addToQueueButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Ajouter"
+                    android:drawableStart="@drawable/ic_add"
+                    android:drawablePadding="8dp"
+                    app:iconGravity="textStart"
+                    app:cornerRadius="20dp"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="8dp"
+                    app:strokeWidth="1dp"
+                    app:strokeColor="@color/primary"
+                    android:textColor="@color/primary"
+                    app:iconTint="@color/primary"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+            </LinearLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/queueRecyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:clipToPadding="false"
+                android:paddingBottom="16dp"/>
+
         </LinearLayout>
 
     </androidx.core.widget.NestedScrollView>
@@ -204,3 +246,4 @@
         app:fabSize="mini"/>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
+

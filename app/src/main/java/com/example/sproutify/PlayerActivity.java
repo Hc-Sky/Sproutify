@@ -28,16 +28,25 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.ItemTouchHelper;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
+import androidx.annotation.Nullable;
 
 import com.bumptech.glide.Glide;
 import com.example.sproutify.data.FavoritesManager;
 import com.example.sproutify.data.MusicPlayerState;
+import com.example.sproutify.data.QueueManager;
 import com.example.sproutify.model.Track;
 import com.example.sproutify.service.MusicService;
+import com.example.sproutify.ui.QueueAdapter;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.PlaybackException;
+import com.google.android.material.button.MaterialButton;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -95,6 +104,10 @@ public class PlayerActivity extends AppCompatActivity {
     private ImageButton nextButton;
     private FloatingActionButton favoriteButton;
     private MaterialToolbar toolbar;
+    private RecyclerView queueRecyclerView;
+    private QueueAdapter queueAdapter;
+    private ItemTouchHelper itemTouchHelper;
+    private QueueManager queueManager;
 
     private ServiceConnection connection = new ServiceConnection() {
         @Override
@@ -160,6 +173,13 @@ public class PlayerActivity extends AppCompatActivity {
         isActive = true;
         setContentView(R.layout.activity_player);
 
+        // Initialisation du QueueManager
+        queueManager = QueueManager.getInstance();
+        
+        // Initialisation de la liste de base
+        List<Track> baseList = MusicPlayerState.getInstance().getTrackList();
+        queueManager.setBaseList(baseList);
+
         // Initialisation du Handler
         handler = new Handler(Looper.getMainLooper());
 
@@ -177,6 +197,10 @@ public class PlayerActivity extends AppCompatActivity {
         favoriteButton = findViewById(R.id.playerFavoriteButton);
         toolbar = findViewById(R.id.playerToolbar);
         equalizerView = findViewById(R.id.playerEqualizer);
+        queueRecyclerView = findViewById(R.id.queueRecyclerView);
+
+        // Configuration de la file d'attente
+        setupQueue();
 
         // Ajouter un listener long click pour le test audio
         playPauseButton.setOnLongClickListener(view -> {
@@ -527,14 +551,19 @@ public class PlayerActivity extends AppCompatActivity {
     }
 
     private void loadAndPlayTrack() {
+        if (currentTrack == null || bound || musicService == null) {
+            return;
+        }
+
         try {
+            isLoading = true;
+            updatePlayPauseButton();
+
+            // Mettre à jour le QueueManager
+            queueManager.setQueue(trackList, currentTrackPosition);
+
             Log.d(TAG, "loadAndPlayTrack: Début de la méthode");
             
-            if (!bound || musicService == null) {
-                Log.e(TAG, "loadAndPlayTrack: Service non lié ou null");
-                return;
-            }
-
             if (isLoading) {
                 Log.d(TAG, "loadAndPlayTrack: Déjà en cours de chargement");
                 return;
@@ -661,102 +690,35 @@ public class PlayerActivity extends AppCompatActivity {
             currentTrackPosition = trackList.indexOf(track);
             MusicPlayerState.getInstance().setCurrentTrack(currentTrack);
             MusicPlayerState.getInstance().setPlaying(true);
+            
+            // Mettre à jour la file d'attente pour le nouveau morceau
+            queueManager.updateQueueForNewTrack(track);
+            
             updateUI();
+            updateQueueUI();
             musicService.playTrack(track);
         }
     }
 
     private void playPreviousTrack() {
-        if (!bound || musicService == null) {
-            Log.e(TAG, "playPreviousTrack: Service non disponible");
-            return;
-        }
-
-        if (trackList == null || trackList.isEmpty()) {
-            Log.e(TAG, "playPreviousTrack: Liste des pistes vide");
-            Toast.makeText(this, "Aucune piste disponible", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        try {
-            Log.d(TAG, "playPreviousTrack: Lecture piste précédente");
-            Log.d(TAG, "playPreviousTrack: Position actuelle: " + currentTrackPosition + ", Taille liste: " + trackList.size());
-            
-            // Déclenche l'animation de sortie de la pochette actuelle
-            coverImageView.startAnimation(slideOutRight);
-
-            if (currentTrackPosition > 0) {
-                currentTrackPosition--;
-            } else {
-                currentTrackPosition = trackList.size() - 1;
+        if (bound && musicService != null) {
+            Track previousTrack = queueManager.getPreviousTrack();
+            if (previousTrack != null) {
+                queueManager.moveToPrevious();
+                playTrack(previousTrack);
+                updateQueueUI();
             }
-            
-            currentTrack = trackList.get(currentTrackPosition);
-            if (currentTrack == null) {
-                throw new IllegalStateException("Piste non trouvée à la position " + currentTrackPosition);
-            }
-            
-            Log.d(TAG, "playPreviousTrack: Nouvelle piste - " + currentTrack.title);
-            
-            MusicPlayerState.getInstance().setCurrentTrack(currentTrack);
-            MusicPlayerState.getInstance().setCurrentTrackPosition(currentTrackPosition);
-            
-            // Mettre à jour l'état du bouton favori
-            updateFavoriteButton();
-            
-            // Jouer la piste - L'interface sera mise à jour une fois l'animation terminée
-            musicService.playTrack(currentTrack);
-            Log.d(TAG, "playPreviousTrack: Piste précédente chargée et en cours de lecture");
-        } catch (Exception e) {
-            Log.e(TAG, "playPreviousTrack: Erreur lors du changement de piste", e);
-            Toast.makeText(this, "Erreur lors du changement de piste: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
 
     private void playNextTrack() {
-        if (!bound || musicService == null) {
-            Log.e(TAG, "playNextTrack: Service non disponible");
-            return;
-        }
-
-        if (trackList == null || trackList.isEmpty()) {
-            Log.e(TAG, "playNextTrack: Liste des pistes vide");
-            Toast.makeText(this, "Aucune piste disponible", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        try {
-            Log.d(TAG, "playNextTrack: Lecture piste suivante");
-            Log.d(TAG, "playNextTrack: Position actuelle: " + currentTrackPosition + ", Taille liste: " + trackList.size());
-            
-            // Déclenche l'animation de sortie de la pochette actuelle
-            coverImageView.startAnimation(slideOutLeft);
-
-            if (currentTrackPosition < trackList.size() - 1) {
-                currentTrackPosition++;
-            } else {
-                currentTrackPosition = 0;
+        if (bound && musicService != null) {
+            Track nextTrack = queueManager.getNextTrack();
+            if (nextTrack != null) {
+                queueManager.moveToNext();
+                playTrack(nextTrack);
+                updateQueueUI();
             }
-            
-            currentTrack = trackList.get(currentTrackPosition);
-            if (currentTrack == null) {
-                throw new IllegalStateException("Piste non trouvée à la position " + currentTrackPosition);
-            }
-            
-            Log.d(TAG, "playNextTrack: Nouvelle piste - " + currentTrack.title);
-            
-            MusicPlayerState.getInstance().setCurrentTrack(currentTrack);
-            MusicPlayerState.getInstance().setCurrentTrackPosition(currentTrackPosition);
-            
-            // Mettre à jour l'état du bouton favori
-            updateFavoriteButton();
-            
-            // Jouer la piste - L'interface sera mise à jour une fois l'animation terminée
-            musicService.playTrack(currentTrack);
-            Log.d(TAG, "playNextTrack: Piste suivante chargée et en cours de lecture");
-        } catch (Exception e) {
-            Log.e(TAG, "playNextTrack: Erreur lors du changement de piste", e);
-            Toast.makeText(this, "Erreur lors du changement de piste: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -1159,5 +1121,143 @@ public class PlayerActivity extends AppCompatActivity {
             currentTimeTextView.setText(formatDuration(position));
             totalTimeTextView.setText(formatDuration(duration));
         }
+    }
+
+    private void setupQueue() {
+        queueRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        queueAdapter = new QueueAdapter(
+            queueManager.getQueue(),
+            queueManager.getCurrentIndex(),
+            viewHolder -> itemTouchHelper.startDrag(viewHolder)
+        );
+        queueRecyclerView.setAdapter(queueAdapter);
+
+        // Configuration du bouton d'ajout à la file d'attente
+        MaterialButton addToQueueButton = findViewById(R.id.addToQueueButton);
+        addToQueueButton.setOnClickListener(v -> showAddToQueueDialog());
+
+        ItemTouchHelper.Callback callback = new ItemTouchHelper.SimpleCallback(
+            ItemTouchHelper.UP | ItemTouchHelper.DOWN, 0) {
+            @Override
+            public boolean onMove(@NonNull RecyclerView recyclerView,
+                                @NonNull RecyclerView.ViewHolder viewHolder,
+                                @NonNull RecyclerView.ViewHolder target) {
+                int fromPosition = viewHolder.getAdapterPosition();
+                int toPosition = target.getAdapterPosition();
+                queueManager.moveTrack(fromPosition, toPosition);
+                queueAdapter.updateQueue(queueManager.getQueue(), queueManager.getCurrentIndex());
+                return true;
+            }
+
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+                // Non utilisé
+            }
+        };
+
+        itemTouchHelper = new ItemTouchHelper(callback);
+        itemTouchHelper.attachToRecyclerView(queueRecyclerView);
+    }
+
+    private void showAddToQueueDialog() {
+        String[] options = {
+            "Ajouter après la piste en cours",
+            "Ajouter à la fin de la file",
+            "Ajouter une liste de pistes"
+        };
+
+        new AlertDialog.Builder(this)
+            .setTitle("Ajouter à la file d'attente")
+            .setItems(options, (dialog, which) -> {
+                switch (which) {
+                    case 0:
+                        // Ajouter après la piste en cours
+                        Intent intent = new Intent(this, TrackSelectionActivity.class);
+                        intent.putExtra("addAfterCurrent", true);
+                        startActivityForResult(intent, REQUEST_ADD_TO_QUEUE);
+                        break;
+                    case 1:
+                        // Ajouter à la fin de la file
+                        intent = new Intent(this, TrackSelectionActivity.class);
+                        intent.putExtra("addAfterCurrent", false);
+                        startActivityForResult(intent, REQUEST_ADD_TO_QUEUE);
+                        break;
+                    case 2:
+                        // Ajouter une liste de pistes
+                        showAddTracksDialog();
+                        break;
+                }
+            })
+            .show();
+    }
+
+    private void showAddTracksDialog() {
+        // Récupérer toutes les pistes disponibles
+        List<Track> allTracks = MusicPlayerState.getInstance().getTrackList();
+        
+        // Créer un adaptateur pour la sélection multiple
+        boolean[] checkedTracks = new boolean[allTracks.size()];
+        String[] trackNames = new String[allTracks.size()];
+        
+        for (int i = 0; i < allTracks.size(); i++) {
+            Track track = allTracks.get(i);
+            trackNames[i] = track.title + " - " + track.artist;
+        }
+
+        new AlertDialog.Builder(this)
+            .setTitle("Sélectionner les pistes à ajouter")
+            .setMultiChoiceItems(trackNames, checkedTracks, null)
+            .setPositiveButton("Ajouter", (dialog, which) -> {
+                List<Track> selectedTracks = new ArrayList<>();
+                for (int i = 0; i < checkedTracks.length; i++) {
+                    if (checkedTracks[i]) {
+                        selectedTracks.add(allTracks.get(i));
+                    }
+                }
+                
+                if (!selectedTracks.isEmpty()) {
+                    queueManager.addTracksToQueue(selectedTracks);
+                    updateQueueUI();
+                    Toast.makeText(this, 
+                        selectedTracks.size() + " piste(s) ajoutée(s) à la file d'attente", 
+                        Toast.LENGTH_SHORT).show();
+                }
+            })
+            .setNegativeButton("Annuler", null)
+            .show();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        
+        if (requestCode == REQUEST_ADD_TO_QUEUE && resultCode == RESULT_OK && data != null) {
+            Track selectedTrack = data.getParcelableExtra("selected_track");
+            boolean addAfterCurrent = data.getBooleanExtra("addAfterCurrent", false);
+            
+            if (selectedTrack != null) {
+                if (addAfterCurrent) {
+                    queueManager.addAfterCurrent(selectedTrack);
+                } else {
+                    queueManager.addToQueue(selectedTrack);
+                }
+                updateQueueUI();
+                Toast.makeText(this, "Piste ajoutée à la file d'attente", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    private static final int REQUEST_ADD_TO_QUEUE = 1001;
+
+    private void updateQueueUI() {
+        if (queueAdapter != null) {
+            queueAdapter.updateQueue(queueManager.getQueue(), queueManager.getCurrentIndex());
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        updateQueueUI();
     }
 }
