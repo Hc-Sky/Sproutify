@@ -383,7 +383,6 @@ public class PlayerActivity extends AppCompatActivity {
             Log.d(TAG, "PlayPause button clicked - bound: " + bound + ", musicService: " + (musicService != null));
             if (!bound || musicService == null) {
                 Log.e(TAG, "setupButtons: Service non disponible");
-                Toast.makeText(this, "Service de musique non disponible", Toast.LENGTH_SHORT).show();
                 return;
             }
             
@@ -401,7 +400,6 @@ public class PlayerActivity extends AppCompatActivity {
             Log.d(TAG, "Previous button clicked - bound: " + bound + ", musicService: " + (musicService != null));
             if (!bound || musicService == null) {
                 Log.e(TAG, "setupButtons: Service non disponible");
-                Toast.makeText(this, "Service de musique non disponible", Toast.LENGTH_SHORT).show();
                 return;
             }
             
@@ -419,7 +417,6 @@ public class PlayerActivity extends AppCompatActivity {
             Log.d(TAG, "Next button clicked - bound: " + bound + ", musicService: " + (musicService != null));
             if (!bound || musicService == null) {
                 Log.e(TAG, "setupButtons: Service non disponible");
-                Toast.makeText(this, "Service de musique non disponible", Toast.LENGTH_SHORT).show();
                 return;
             }
             
@@ -520,7 +517,6 @@ public class PlayerActivity extends AppCompatActivity {
             
             if (!bound || musicService == null) {
                 Log.e(TAG, "loadAndPlayTrack: Service non lié ou null");
-                Toast.makeText(this, "Service de musique non disponible", Toast.LENGTH_SHORT).show();
                 return;
             }
 
@@ -649,7 +645,6 @@ public class PlayerActivity extends AppCompatActivity {
     private void playPreviousTrack() {
         if (!bound || musicService == null) {
             Log.e(TAG, "playPreviousTrack: Service non disponible");
-            Toast.makeText(this, "Service de musique non disponible", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -695,7 +690,6 @@ public class PlayerActivity extends AppCompatActivity {
     private void playNextTrack() {
         if (!bound || musicService == null) {
             Log.e(TAG, "playNextTrack: Service non disponible");
-            Toast.makeText(this, "Service de musique non disponible", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -1073,7 +1067,6 @@ public class PlayerActivity extends AppCompatActivity {
     private void togglePlayPause() {
         if (!bound || musicService == null) {
             Log.e(TAG, "togglePlayPause: Service non disponible");
-            Toast.makeText(this, "Service de musique non disponible", Toast.LENGTH_SHORT).show();
             return;
         }
 
