@@ -394,6 +394,9 @@ public class MainActivity extends AppCompatActivity implements TrackAdapter.OnTr
             intent.putExtra(PlayerActivity.EXTRA_TRACK, currentTrack);
             intent.putExtra(PlayerActivity.EXTRA_TRACK_LIST, new ArrayList<>(MusicPlayerState.getInstance().getTrackList()));
             intent.putExtra(PlayerActivity.EXTRA_TRACK_POSITION, MusicPlayerState.getInstance().getCurrentTrackPosition());
+            if (bound && musicService != null) {
+                intent.putExtra(PlayerActivity.EXTRA_CURRENT_POSITION, musicService.getCurrentPosition());
+            }
             startActivity(intent);
         }
     }

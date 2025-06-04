@@ -55,6 +55,7 @@ public class PlayerActivity extends AppCompatActivity {
     public static final String EXTRA_TRACK = "extra_track";
     public static final String EXTRA_TRACK_LIST = "extra_track_list";
     public static final String EXTRA_TRACK_POSITION = "extra_track_position";
+    public static final String EXTRA_CURRENT_POSITION = "extra_current_position";
     private static final String ACTION_PLAYER_CONTROL = "com.example.sproutify.PLAYER_CONTROL";
     private static boolean isActive = false;
 
@@ -115,6 +116,13 @@ public class PlayerActivity extends AppCompatActivity {
                     if (currentTrack != null) {
                         Log.d(TAG, "onServiceConnected: Piste déjà sélectionnée, démarrage de la lecture");
                         loadAndPlayTrack();
+                        
+                        // Appliquer la position de lecture si elle a été fournie
+                        int currentPosition = getIntent().getIntExtra(EXTRA_CURRENT_POSITION, 0);
+                        if (currentPosition > 0) {
+                            Log.d(TAG, "onServiceConnected: Application de la position de lecture: " + currentPosition);
+                            musicService.seekTo(currentPosition);
+                        }
                     }
                 });
             } catch (Exception e) {
@@ -196,6 +204,7 @@ public class PlayerActivity extends AppCompatActivity {
         Track track = getIntent().getParcelableExtra(EXTRA_TRACK);
         ArrayList<Track> tracks = getIntent().getParcelableArrayListExtra(EXTRA_TRACK_LIST);
         int position = getIntent().getIntExtra(EXTRA_TRACK_POSITION, 0);
+        int currentPosition = getIntent().getIntExtra(EXTRA_CURRENT_POSITION, 0);
 
         if (track != null && tracks != null && !tracks.isEmpty()) {
             trackList = new ArrayList<>(tracks); // Créer une nouvelle liste pour éviter les problèmes de référence
@@ -210,9 +219,15 @@ public class PlayerActivity extends AppCompatActivity {
             
             Log.d(TAG, "onCreate: Liste des pistes initialisée avec " + trackList.size() + " pistes");
             Log.d(TAG, "onCreate: Position actuelle: " + currentTrackPosition);
+            Log.d(TAG, "onCreate: Position de lecture: " + currentPosition);
             
             updateUI();
             loadAndPlayTrack();
+            
+            // Si une position de lecture a été fournie, on se positionne à cet endroit
+            if (currentPosition > 0 && bound && musicService != null) {
+                musicService.seekTo(currentPosition);
+            }
         } else {
             Log.e(TAG, "onCreate: Données invalides - track: " + (track != null) + ", tracks: " + (tracks != null));
             Toast.makeText(this, "Erreur: Impossible de charger la liste des pistes", Toast.LENGTH_SHORT).show();
@@ -539,9 +554,9 @@ public class PlayerActivity extends AppCompatActivity {
             // Mettre à jour l'interface avant de commencer la lecture
             updateUI();
 
-            // Réinitialiser le lecteur
-            musicService.reset();
-            Log.d(TAG, "loadAndPlayTrack: Lecteur réinitialisé");
+            // Récupérer la position actuelle de lecture
+            int currentPosition = getIntent().getIntExtra(EXTRA_CURRENT_POSITION, 0);
+            boolean shouldResumeFromPosition = currentPosition > 0;
 
             // Configurer les listeners pour MediaPlayer
             musicService.setPlaybackListener(new MusicService.OnPlaybackStateChangeListener() {
@@ -618,9 +633,18 @@ public class PlayerActivity extends AppCompatActivity {
                 }
             });
 
-            // Lire la piste
-            Log.d(TAG, "loadAndPlayTrack: Démarrage de la lecture");
-            musicService.playTrack(currentTrack);
+            // Si nous avons une position de lecture, on ne relance pas la lecture
+            if (!shouldResumeFromPosition) {
+                // Réinitialiser le lecteur et lancer la lecture
+                musicService.reset();
+                Log.d(TAG, "loadAndPlayTrack: Lecteur réinitialisé");
+                musicService.playTrack(currentTrack);
+                Log.d(TAG, "loadAndPlayTrack: Démarrage de la lecture");
+            } else {
+                // On se contente de mettre à jour l'interface
+                Log.d(TAG, "loadAndPlayTrack: Reprise de la lecture à la position " + currentPosition);
+                musicService.seekTo(currentPosition);
+            }
 
         } catch (Exception e) {
             Log.e(TAG, "loadAndPlayTrack: Erreur lors du chargement de la piste", e);
