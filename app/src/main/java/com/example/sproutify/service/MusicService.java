@@ -15,6 +15,10 @@ import com.example.sproutify.model.Track;
 import java.io.IOException;
 import java.util.List;
 
+/**
+ * Service de lecture de musique qui gère la lecture des morceaux en arrière-plan.
+ * Ce service implémente les fonctionnalités de lecture, pause, navigation et contrôle du volume.
+ */
 public class MusicService extends Service {
     private static final String TAG = "MusicService";
     private MediaPlayer mediaPlayer;
@@ -22,20 +26,47 @@ public class MusicService extends Service {
     private OnPlaybackStateChangeListener playbackListener;
     private int currentVolume = 50; // Volume par défaut à 50%
 
+    /**
+     * Interface pour notifier les changements d'état de la lecture.
+     */
     public interface OnPlaybackStateChangeListener {
+        /**
+         * Appelé lorsque l'état de lecture change.
+         * @param isPlaying true si la lecture est en cours, false sinon
+         */
         void onPlaybackStateChanged(boolean isPlaying);
+
+        /**
+         * Appelé en cas d'erreur pendant la lecture.
+         * @param errorMessage Message d'erreur détaillé
+         */
         void onError(String errorMessage);
+
+        /**
+         * Appelé lorsque le morceau en cours change.
+         * @param track Nouveau morceau en cours de lecture
+         */
         void onTrackChanged(Track track);
     }
 
     private final IBinder binder = new MusicBinder();
 
+    /**
+     * Classe Binder pour permettre la liaison avec le service.
+     */
     public class MusicBinder extends Binder {
+        /**
+         * Retourne l'instance du service.
+         * @return Instance du MusicService
+         */
         public MusicService getService() {
             return MusicService.this;
         }
     }
 
+    /**
+     * Initialise le service et configure le MediaPlayer.
+     */
     @Override
     public void onCreate() {
         super.onCreate();
@@ -43,6 +74,9 @@ public class MusicService extends Service {
         setupMediaPlayer();
     }
 
+    /**
+     * Configure le MediaPlayer avec les listeners nécessaires.
+     */
     private void setupMediaPlayer() {
         Log.d(TAG, "setupMediaPlayer: Début de la configuration");
         try {
@@ -95,22 +129,42 @@ public class MusicService extends Service {
         }
     }
 
+    /**
+     * Gère le démarrage du service.
+     * @param intent Intent de démarrage
+     * @param flags Flags de démarrage
+     * @param startId ID de démarrage
+     * @return Mode de démarrage du service
+     */
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "onStartCommand: Service démarré");
         return START_NOT_STICKY;
     }
 
+    /**
+     * Gère la liaison avec le service.
+     * @param intent Intent de liaison
+     * @return IBinder pour la liaison
+     */
     @Override
     public IBinder onBind(Intent intent) {
         Log.d(TAG, "onBind: Service lié");
         return binder;
     }
 
+    /**
+     * Définit le listener pour les changements d'état de lecture.
+     * @param listener Listener à définir
+     */
     public void setPlaybackListener(OnPlaybackStateChangeListener listener) {
         this.playbackListener = listener;
     }
 
+    /**
+     * Joue un morceau spécifique.
+     * @param track Morceau à jouer
+     */
     public void playTrack(Track track) {
         if (track == null) {
             Log.e(TAG, "playTrack: Track is null");
@@ -166,6 +220,9 @@ public class MusicService extends Service {
         }
     }
 
+    /**
+     * Réinitialise le MediaPlayer.
+     */
     public void reset() {
         if (mediaPlayer != null) {
             Log.d(TAG, "reset: Début de la réinitialisation");
@@ -181,6 +238,9 @@ public class MusicService extends Service {
         }
     }
 
+    /**
+     * Démarre la lecture.
+     */
     public void start() {
         if (mediaPlayer != null && isPrepared) {
             try {
@@ -195,6 +255,9 @@ public class MusicService extends Service {
         }
     }
 
+    /**
+     * Met la lecture en pause.
+     */
     public void pause() {
         if (mediaPlayer != null && mediaPlayer.isPlaying()) {
             try {
@@ -209,6 +272,10 @@ public class MusicService extends Service {
         }
     }
 
+    /**
+     * Change la position de lecture.
+     * @param position Nouvelle position en millisecondes
+     */
     public void seekTo(int position) {
         if (mediaPlayer != null && isPrepared) {
             try {
@@ -220,10 +287,17 @@ public class MusicService extends Service {
         }
     }
 
+    /**
+     * Vérifie si la lecture est en cours.
+     * @return true si la lecture est en cours, false sinon
+     */
     public boolean isPlaying() {
         return mediaPlayer != null && mediaPlayer.isPlaying();
     }
 
+    /**
+     * Bascule entre lecture et pause.
+     */
     public void togglePlayPause() {
         if (isPlaying()) {
             Log.d(TAG, "togglePlayPause: Mise en pause");
@@ -234,6 +308,10 @@ public class MusicService extends Service {
         }
     }
 
+    /**
+     * Obtient la position actuelle de lecture.
+     * @return Position actuelle en millisecondes
+     */
     public int getCurrentPosition() {
         if (mediaPlayer != null && isPrepared) {
             try {
@@ -246,6 +324,10 @@ public class MusicService extends Service {
         return 0;
     }
 
+    /**
+     * Obtient la durée totale du morceau.
+     * @return Durée en millisecondes
+     */
     public int getDuration() {
         if (mediaPlayer != null && isPrepared) {
             try {
@@ -258,79 +340,79 @@ public class MusicService extends Service {
         return 0;
     }
 
+    /**
+     * Définit le volume de lecture.
+     * @param volume Volume entre 0 et 100
+     */
     public void setVolume(int volume) {
-        if (volume < 0) volume = 0;
-        if (volume > 100) volume = 100;
-
-        currentVolume = volume;
-
         if (mediaPlayer != null) {
-            float volumeLevel = currentVolume / 100f;
-            mediaPlayer.setVolume(volumeLevel, volumeLevel);
-            Log.d(TAG, "setVolume: Volume réglé à " + volumeLevel);
+            try {
+                float volumeFloat = volume / 100f;
+                mediaPlayer.setVolume(volumeFloat, volumeFloat);
+                currentVolume = volume;
+                Log.d(TAG, "setVolume: Volume défini à " + volume);
+            } catch (Exception e) {
+                Log.e(TAG, "setVolume: Erreur lors du changement de volume", e);
+            }
         }
     }
 
+    /**
+     * Joue le morceau suivant dans la file d'attente.
+     */
     public void playNext() {
-        Log.d(TAG, "playNext: Début de la méthode");
         Track nextTrack = QueueManager.getInstance().getNextTrack();
         if (nextTrack != null) {
-            Log.d(TAG, "playNext: Piste suivante trouvée - " + nextTrack.title);
-            QueueManager.getInstance().moveToNext();
-            
-            // Mettre à jour le MusicPlayerState avant de jouer la piste
-            MusicPlayerState.getInstance().setCurrentTrack(nextTrack);
-            MusicPlayerState.getInstance().setPlaying(true);
-            
             playTrack(nextTrack);
-            
-            // Notifier le changement de piste
-            if (playbackListener != null) {
-                playbackListener.onTrackChanged(nextTrack);
-            }
         } else {
-            Log.d(TAG, "playNext: Aucune piste suivante disponible");
+            Log.d(TAG, "playNext: Pas de morceau suivant disponible");
+            if (playbackListener != null) {
+                playbackListener.onPlaybackStateChanged(false);
+            }
         }
     }
 
+    /**
+     * Joue le morceau précédent dans la file d'attente.
+     */
     public void playPrevious() {
-        Log.d(TAG, "playPrevious: Début de la méthode");
         Track previousTrack = QueueManager.getInstance().getPreviousTrack();
         if (previousTrack != null) {
-            Log.d(TAG, "playPrevious: Piste précédente trouvée - " + previousTrack.title);
-            QueueManager.getInstance().moveToPrevious();
-            
-            // Mettre à jour le MusicPlayerState avant de jouer la piste
-            MusicPlayerState.getInstance().setCurrentTrack(previousTrack);
-            MusicPlayerState.getInstance().setPlaying(true);
-            
             playTrack(previousTrack);
-            
-            // Notifier le changement de piste
-            if (playbackListener != null) {
-                playbackListener.onTrackChanged(previousTrack);
-            }
         } else {
-            Log.d(TAG, "playPrevious: Aucune piste précédente disponible");
+            Log.d(TAG, "playPrevious: Pas de morceau précédent disponible");
+            if (playbackListener != null) {
+                playbackListener.onPlaybackStateChanged(false);
+            }
         }
     }
 
+    /**
+     * Active ou désactive le mode aléatoire.
+     * @param shuffle true pour activer, false pour désactiver
+     */
     public void setShuffleMode(boolean shuffle) {
         QueueManager.getInstance().setShuffleMode(shuffle);
     }
 
+    /**
+     * Vérifie si le mode aléatoire est activé.
+     * @return true si le mode aléatoire est activé
+     */
     public boolean isShuffleMode() {
         return QueueManager.getInstance().isShuffleMode();
     }
 
+    /**
+     * Nettoie les ressources lors de la destruction du service.
+     */
     @Override
     public void onDestroy() {
-        Log.d(TAG, "onDestroy: Destruction du service de musique");
+        super.onDestroy();
         if (mediaPlayer != null) {
             mediaPlayer.release();
             mediaPlayer = null;
         }
-        super.onDestroy();
     }
 }
 

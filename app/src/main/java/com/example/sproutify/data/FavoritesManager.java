@@ -15,7 +15,9 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Gestionnaire de favoris pour sauvegarder et récupérer les morceaux likés
+ * Gestionnaire de favoris pour sauvegarder et récupérer les morceaux likés.
+ * Cette classe utilise le pattern Singleton pour assurer une instance unique
+ * et utilise SharedPreferences pour la persistance des données.
  */
 public class FavoritesManager {
     private static final String TAG = "FavoritesManager";
@@ -28,6 +30,13 @@ public class FavoritesManager {
 
     private static FavoritesManager instance;
 
+    /**
+     * Obtient l'instance unique du FavoritesManager (pattern Singleton).
+     * Si l'instance n'existe pas, elle est créée avec le contexte fourni.
+     * 
+     * @param context Le contexte de l'application
+     * @return L'instance unique de FavoritesManager
+     */
     public static synchronized FavoritesManager getInstance(Context context) {
         if (instance == null) {
             instance = new FavoritesManager(context.getApplicationContext());
@@ -35,6 +44,12 @@ public class FavoritesManager {
         return instance;
     }
 
+    /**
+     * Constructeur privé du FavoritesManager.
+     * Initialise les préférences partagées, le parser JSON et charge les favoris existants.
+     * 
+     * @param context Le contexte de l'application
+     */
     private FavoritesManager(Context context) {
         sharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         gson = new Gson();
@@ -42,9 +57,11 @@ public class FavoritesManager {
     }
 
     /**
-     * Ajoute ou supprime un morceau des favoris
-     * @param track Morceau à ajouter/supprimer
-     * @return true si le morceau est désormais en favoris, false sinon
+     * Bascule l'état d'un morceau dans les favoris.
+     * Si le morceau est déjà en favoris, il est retiré, sinon il est ajouté.
+     * 
+     * @param track Le morceau à ajouter ou retirer des favoris
+     * @return true si le morceau est maintenant en favoris, false s'il a été retiré
      */
     public boolean toggleFavorite(Track track) {
         String trackId = track.mp3Url; // Utilisation de l'URL comme identifiant unique
@@ -61,18 +78,20 @@ public class FavoritesManager {
     }
 
     /**
-     * Vérifie si un morceau est en favoris
-     * @param track Morceau à vérifier
-     * @return true si le morceau est en favoris
+     * Vérifie si un morceau est présent dans les favoris.
+     * 
+     * @param track Le morceau à vérifier
+     * @return true si le morceau est en favoris, false sinon
      */
     public boolean isFavorite(Track track) {
         return track != null && favoriteTracks.contains(track.mp3Url);
     }
 
     /**
-     * Filtre une liste de morceaux pour ne garder que les favoris
-     * @param allTracks Liste complète des morceaux
-     * @return Liste des morceaux favoris uniquement
+     * Filtre une liste de morceaux pour ne conserver que ceux qui sont en favoris.
+     * 
+     * @param allTracks La liste complète des morceaux à filtrer
+     * @return Une nouvelle liste contenant uniquement les morceaux favoris
      */
     public List<Track> getFavoriteTracks(List<Track> allTracks) {
         List<Track> favorites = new ArrayList<>();
@@ -86,6 +105,12 @@ public class FavoritesManager {
         return favorites;
     }
 
+    /**
+     * Charge les identifiants des morceaux favoris depuis les préférences partagées.
+     * En cas d'erreur de lecture, retourne un ensemble vide.
+     * 
+     * @return Un ensemble contenant les identifiants des morceaux favoris
+     */
     private Set<String> loadFavoriteTrackIds() {
         String json = sharedPreferences.getString(KEY_FAVORITE_TRACKS, null);
         if (json != null) {
@@ -99,6 +124,10 @@ public class FavoritesManager {
         return new HashSet<>();
     }
 
+    /**
+     * Sauvegarde les identifiants des morceaux favoris dans les préférences partagées.
+     * La sauvegarde est effectuée de manière asynchrone.
+     */
     private void saveFavoriteTrackIds() {
         String json = gson.toJson(favoriteTracks);
         sharedPreferences.edit().putString(KEY_FAVORITE_TRACKS, json).apply();

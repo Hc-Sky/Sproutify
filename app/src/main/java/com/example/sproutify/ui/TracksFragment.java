@@ -25,12 +25,22 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Fragment pour afficher et gérer la liste des morceaux.
+ * Supporte le filtrage par titre, artiste, album et la recherche.
+ * Peut afficher soit tous les morceaux, soit uniquement les favoris.
+ */
 public class TracksFragment extends Fragment implements TrackAdapter.OnTrackFavoriteListener {
 
+    /** Clé pour l'argument indiquant si on affiche les favoris */
     private static final String ARG_SHOW_FAVORITES = "show_favorites";
+    /** Constante pour le filtre "Tous" */
     private static final int FILTER_ALL = 0;
+    /** Constante pour le filtre "Titre" */
     private static final int FILTER_TITLE = 1;
+    /** Constante pour le filtre "Artiste" */
     private static final int FILTER_ARTIST = 2;
+    /** Constante pour le filtre "Album" */
     private static final int FILTER_ALBUM = 3;
 
     private RecyclerView recyclerView;
@@ -45,10 +55,19 @@ public class TracksFragment extends Fragment implements TrackAdapter.OnTrackFavo
     private boolean showUniqueItems = false;
     private String selectedItem = ""; // Pour stocker l'élément sélectionné (album ou artiste)
 
+    /**
+     * Constructeur vide requis pour le Fragment.
+     */
     public TracksFragment() {
         // Required empty public constructor
     }
 
+    /**
+     * Crée une nouvelle instance du fragment.
+     * 
+     * @param showFavorites true pour afficher les favoris, false pour tous les morceaux
+     * @return Une nouvelle instance de TracksFragment
+     */
     public static TracksFragment newInstance(boolean showFavorites) {
         TracksFragment fragment = new TracksFragment();
         Bundle args = new Bundle();
@@ -57,6 +76,9 @@ public class TracksFragment extends Fragment implements TrackAdapter.OnTrackFavo
         return fragment;
     }
 
+    /**
+     * Initialise le fragment et récupère les arguments.
+     */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -65,6 +87,10 @@ public class TracksFragment extends Fragment implements TrackAdapter.OnTrackFavo
         }
     }
 
+    /**
+     * Crée et configure la vue du fragment.
+     * Initialise le RecyclerView, la SearchView et les filtres.
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -115,6 +141,9 @@ public class TracksFragment extends Fragment implements TrackAdapter.OnTrackFavo
         return view;
     }
 
+    /**
+     * Configure la SearchView pour la recherche de morceaux.
+     */
     private void setupSearchView() {
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
@@ -131,6 +160,9 @@ public class TracksFragment extends Fragment implements TrackAdapter.OnTrackFavo
         });
     }
 
+    /**
+     * Configure les filtres (Tous, Titre, Artiste, Album).
+     */
     private void setupFilters() {
         filterChipGroup.setOnCheckedChangeListener((group, checkedId) -> {
             selectedItem = ""; // Réinitialiser l'élément sélectionné lors du changement de filtre
@@ -155,6 +187,10 @@ public class TracksFragment extends Fragment implements TrackAdapter.OnTrackFavo
         });
     }
 
+    /**
+     * Filtre la liste des morceaux en fonction des critères actuels.
+     * Prend en compte la recherche, les filtres et l'état des favoris.
+     */
     private void filterTracks() {
         List<Track> filteredTracks;
 
@@ -249,8 +285,10 @@ public class TracksFragment extends Fragment implements TrackAdapter.OnTrackFavo
                         filterType = "album";
                         break;
                 }
-                message = "Aucun résultat pour \"" + currentQuery + "\"" + 
-                         (currentFilter != FILTER_ALL ? " dans les " + filterType + "s" : "");
+                message = "Aucun résultat pour \"" + currentQuery + "\"";
+                if (!filterType.isEmpty()) {
+                    message += " dans les " + filterType + "s";
+                }
             }
             emptyView.setText(message);
             emptyView.setVisibility(View.VISIBLE);
@@ -261,20 +299,33 @@ public class TracksFragment extends Fragment implements TrackAdapter.OnTrackFavo
         }
     }
 
+    /**
+     * Met à jour la liste des morceaux et applique les filtres actuels.
+     * 
+     * @param tracks Nouvelle liste de morceaux
+     */
     public void updateTracks(List<Track> tracks) {
         allTracks = tracks;
         filterTracks();
     }
 
+    /**
+     * Appelé lorsqu'un morceau est ajouté ou retiré des favoris.
+     * Met à jour l'affichage si nécessaire.
+     * 
+     * @param track Le morceau modifié
+     */
     @Override
     public void onTrackFavoriteChanged(Track track) {
-        // Mettre à jour la liste quand un favori change (surtout important pour l'onglet favoris)
-        updateTracks(allTracks);
+        if (showFavorites) {
+            filterTracks();
+        }
     }
 
     /**
-     * Retourne la position du fragment (0 pour Accueil, 1 pour Favoris)
-     * @return position du fragment
+     * Retourne la position du fragment dans le ViewPager.
+     * 
+     * @return 0 pour la liste des morceaux, 1 pour les favoris
      */
     public int getFragmentPosition() {
         return showFavorites ? 1 : 0;
