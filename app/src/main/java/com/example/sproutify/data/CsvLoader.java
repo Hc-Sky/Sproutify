@@ -26,16 +26,31 @@ public final class CsvLoader {
 
     private static final String TAG = "CsvLoader";
 
+    /**
+     * Interface de callback pour notifier le chargement terminé
+     * Permet de récupérer la liste des pistes une fois le CSV chargé
+     */
     public interface OnCsvLoaded {
         void onResult(List<Track> tracks);
     }
 
+    // Client HTTP pour les requêtes réseau
     private static final OkHttpClient CLIENT = new OkHttpClient();
+    // URLs de base pour les ressources
     private static final String BASE_IMG = "http://edu.info06.net/lyrics/images/";
     private static final String BASE_MP3 = "http://edu.info06.net/lyrics/mp3/";
 
+    /**
+     * Constructeur privé pour empêcher l'instanciation
+     * La classe est utilisée uniquement via ses méthodes statiques
+     */
     private CsvLoader() { }
 
+    /**
+     * Télécharge et parse le fichier CSV distant
+     * @param url URL du fichier CSV à télécharger
+     * @param callback Callback appelé avec la liste des pistes une fois le chargement terminé
+     */
     public static void fetch(String url, OnCsvLoaded callback) {
 
         Request req = new Request.Builder().url(url).build();
@@ -59,7 +74,11 @@ public final class CsvLoader {
         });
     }
 
-    /* Parse CSV brut ; délimiteur #, première ligne = header */
+    /**
+     * Parse le contenu CSV brut en liste d'objets Track
+     * @param csv Contenu brut du fichier CSV
+     * @return Liste des pistes extraites du CSV
+     */
     private static List<Track> parse(String csv) {
         List<Track> tracks = new ArrayList<>();
         String[] lines = csv.split("\n");
@@ -93,7 +112,11 @@ public final class CsvLoader {
         return tracks;
     }
 
-    /* Retour sur le thread principal */
+    /**
+     * Poste le résultat sur le thread principal
+     * @param cb Callback à appeler
+     * @param data Données à passer au callback
+     */
     private static void post(OnCsvLoaded cb, List<Track> data) {
         new Handler(Looper.getMainLooper()).post(() -> cb.onResult(data));
     }

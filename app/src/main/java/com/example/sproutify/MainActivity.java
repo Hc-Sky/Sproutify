@@ -42,6 +42,10 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Activité principale de l'application Sproutify
+ * Gère l'interface utilisateur principale, le lecteur de musique et la navigation
+ */
 public class MainActivity extends AppCompatActivity implements TrackAdapter.OnTrackClickListener, TrackAdapter.OnTrackFavoriteListener {
     private static final String TAG = "MainActivity";
 
@@ -63,6 +67,11 @@ public class MainActivity extends AppCompatActivity implements TrackAdapter.OnTr
     private MusicService musicService;
     private boolean bound = false;
 
+    /**
+     * Connection au service de musique
+     * Gère la liaison avec le service de lecture de musique et met à jour l'interface utilisateur
+     * en fonction des changements d'état de la lecture
+     */
     private ServiceConnection connection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
@@ -105,6 +114,10 @@ public class MainActivity extends AppCompatActivity implements TrackAdapter.OnTr
         }
     };
 
+    /**
+     * Initialise les composants de l'interface utilisateur
+     * Configure la toolbar, le ViewPager, les onglets et le mini lecteur
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -135,6 +148,10 @@ public class MainActivity extends AppCompatActivity implements TrackAdapter.OnTr
         loadData();
     }
 
+    /**
+     * Initialise toutes les vues de l'interface utilisateur
+     * Configure les listeners pour le mini lecteur et gère les erreurs potentielles
+     */
     private void initializeViews() {
         try {
             // Initialisation des vues principales
@@ -162,6 +179,10 @@ public class MainActivity extends AppCompatActivity implements TrackAdapter.OnTr
         }
     }
 
+    /**
+     * Démarre le vérificateur périodique de l'état du lecteur
+     * Met à jour l'interface toutes les secondes pour refléter l'état actuel de la lecture
+     */
     private void startPlayerStatusChecker() {
         if (handler != null) {
             handler.postDelayed(new Runnable() {
@@ -192,6 +213,10 @@ public class MainActivity extends AppCompatActivity implements TrackAdapter.OnTr
         }
     }
 
+    /**
+     * Initialise et démarre le service de musique
+     * Établit la connexion avec le service pour la lecture audio
+     */
     private void initializeMusicService() {
         // Démarrer et lier le service
         Intent intent = new Intent(this, MusicService.class);
@@ -199,6 +224,10 @@ public class MainActivity extends AppCompatActivity implements TrackAdapter.OnTr
         bindService(intent, connection, Context.BIND_AUTO_CREATE);
     }
 
+    /**
+     * Configure les écouteurs d'événements pour le ViewPager et les onglets
+     * Gère la navigation entre les différentes sections de l'application
+     */
     private void setupEventListeners() {
         // Configuration de l'adaptateur pour le ViewPager
         pagerAdapter = new MainPagerAdapter(this);
@@ -229,6 +258,10 @@ public class MainActivity extends AppCompatActivity implements TrackAdapter.OnTr
         Log.d(TAG, "onCreate: TabLayout configured");
     }
 
+    /**
+     * Charge les données des pistes depuis le serveur
+     * Télécharge le fichier CSV contenant les informations des pistes
+     */
     private void loadData() {
         // Téléchargement du CSV
         String csvUrl = "http://edu.info06.net/lyrics/lyrics.csv";
@@ -236,13 +269,20 @@ public class MainActivity extends AppCompatActivity implements TrackAdapter.OnTr
         Log.d(TAG, "onCreate: CSV fetch initiated");
     }
 
+    /**
+     * Met à jour la liste des pistes dans l'application
+     * Synchronise les données avec l'état global du lecteur
+     */
     private void updateTracks(List<Track> tracks) {
         allTracks = tracks;
         MusicPlayerState.getInstance().setTrackList(tracks);
         updateAllFragments();
     }
 
-    // Méthode pour mettre à jour tous les fragments
+    /**
+     * Met à jour tous les fragments de l'application
+     * Assure la cohérence des données affichées dans toutes les sections
+     */
     private void updateAllFragments() {
         for (int i = 0; i < getSupportFragmentManager().getFragments().size(); i++) {
             if (getSupportFragmentManager().getFragments().get(i) instanceof TracksFragment) {
@@ -265,6 +305,10 @@ public class MainActivity extends AppCompatActivity implements TrackAdapter.OnTr
         }
     }
 
+    /**
+     * Gère le clic sur une piste dans la liste
+     * Démarre la lecture de la piste sélectionnée
+     */
     @Override
     public void onTrackClick(Track track, int position) {
         // Lancement de PlayerActivity avec le morceau sélectionné
@@ -277,6 +321,10 @@ public class MainActivity extends AppCompatActivity implements TrackAdapter.OnTr
         overridePendingTransition(R.anim.slide_in_up, R.anim.slide_out_down);
     }
 
+    /**
+     * Gère les changements d'état des favoris
+     * Met à jour l'interface utilisateur en fonction des modifications des favoris
+     */
     @Override
     public void onTrackFavoriteChanged(Track track) {
         boolean isFavorite = MusicPlayerState.getInstance().isFavorite(track);
@@ -288,6 +336,10 @@ public class MainActivity extends AppCompatActivity implements TrackAdapter.OnTr
         updateCurrentFragment();
     }
 
+    /**
+     * Passe à la piste suivante dans la liste de lecture
+     * Gère la lecture en boucle et la fin de la liste
+     */
     private void playNextTrack() {
         if (bound && musicService != null) {
             musicService.playNext();
@@ -296,7 +348,8 @@ public class MainActivity extends AppCompatActivity implements TrackAdapter.OnTr
     }
 
     /**
-     * Initialise le mini lecteur audio
+     * Initialise le mini lecteur
+     * Configure l'apparence et le comportement du lecteur compact
      */
     private void initializeMiniPlayer() {
         try {
@@ -331,7 +384,8 @@ public class MainActivity extends AppCompatActivity implements TrackAdapter.OnTr
     }
 
     /**
-     * Vérifie s'il y a une musique en cours et met à jour le mini lecteur
+     * Vérifie et met à jour l'état du mini lecteur
+     * Synchronise l'interface avec l'état actuel de la lecture
      */
     private void checkAndUpdateMiniPlayer() {
         if (bound && musicService != null) {
@@ -341,6 +395,7 @@ public class MainActivity extends AppCompatActivity implements TrackAdapter.OnTr
 
     /**
      * Met à jour l'interface du mini lecteur
+     * Affiche les informations de la piste en cours et l'état de lecture
      */
     private void updateMiniPlayer() {
         if (!bound || musicService == null) {
@@ -375,7 +430,8 @@ public class MainActivity extends AppCompatActivity implements TrackAdapter.OnTr
     }
 
     /**
-     * Alterne entre lecture et pause
+     * Bascule entre la lecture et la pause
+     * Gère l'état de lecture de la piste actuelle
      */
     private void togglePlayPause() {
         if (bound && musicService != null) {
@@ -391,7 +447,8 @@ public class MainActivity extends AppCompatActivity implements TrackAdapter.OnTr
     }
 
     /**
-     * Ouvre le lecteur audio complet avec la piste en cours
+     * Ouvre le lecteur complet
+     * Lance l'activité du lecteur détaillé
      */
     private void openFullPlayer() {
         Track currentTrack = MusicPlayerState.getInstance().getCurrentTrack();
@@ -408,7 +465,8 @@ public class MainActivity extends AppCompatActivity implements TrackAdapter.OnTr
     }
 
     /**
-     * Classe AsyncTask pour charger des images à partir d'URLs
+     * Tâche asynchrone pour le chargement des images
+     * Gère le téléchargement et le cache des images de couverture
      */
     private static class LoadImageTask extends AsyncTask<String, Void, Bitmap> {
         private final WeakReference<ImageView> imageViewReference;
@@ -440,6 +498,10 @@ public class MainActivity extends AppCompatActivity implements TrackAdapter.OnTr
         }
     }
 
+    /**
+     * Nettoie les ressources lors de la destruction de l'activité
+     * Déconnecte le service et libère les ressources
+     */
     @Override
     protected void onDestroy() {
         super.onDestroy();

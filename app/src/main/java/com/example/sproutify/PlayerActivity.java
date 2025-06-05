@@ -58,6 +58,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Activité du lecteur de musique complet
+ * Gère l'interface utilisateur détaillée du lecteur, les contrôles de lecture,
+ * la file d'attente et les animations
+ */
 public class PlayerActivity extends AppCompatActivity {
 
     private static final String TAG = "PlayerActivity";
@@ -109,6 +114,11 @@ public class PlayerActivity extends AppCompatActivity {
     private ItemTouchHelper itemTouchHelper;
     private QueueManager queueManager;
 
+    /**
+     * Connection au service de musique
+     * Gère la liaison avec le service de lecture et met à jour l'interface
+     * en fonction des changements d'état de la lecture
+     */
     private ServiceConnection connection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
@@ -167,6 +177,10 @@ public class PlayerActivity extends AppCompatActivity {
         return isActive;
     }
 
+    /**
+     * Initialise l'activité du lecteur
+     * Configure l'interface utilisateur, les animations et les gestionnaires d'événements
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -314,16 +328,11 @@ public class PlayerActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Configure les écouteurs d'événements pour les contrôles de lecture
+     * Gère les interactions utilisateur avec les boutons et la barre de progression
+     */
     private void setupEventListeners() {
-        // Configuration des boutons
-        // Suppression des listeners redondants qui entrent en conflit avec setupButtons()
-        // playPauseButton.setOnClickListener(view -> togglePlayPause());
-        // previousButton.setOnClickListener(view -> playPreviousTrack());
-        // nextButton.setOnClickListener(view -> playNextTrack());
-        // favoriteButton.setOnClickListener(view -> toggleFavorite());
-
-        // Ces listeners sont maintenant définis uniquement dans setupButtons()
-
         // Configuration de la barre de progression
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
@@ -350,6 +359,10 @@ public class PlayerActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Initialise les animations du lecteur
+     * Configure les animations de rotation, pulsation et égaliseur
+     */
     private void setupAnimations() {
         // Animation de vue (View Animation) - Rotation de la pochette d'album
         rotateAnimation = AnimationUtils.loadAnimation(this, R.anim.rotate_album_art);
@@ -414,6 +427,10 @@ public class PlayerActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Configure les boutons de contrôle du lecteur
+     * Initialise les actions pour lecture/pause, précédent/suivant et favoris
+     */
     private void setupButtons() {
         // Vérification de l'état du service au démarrage
         Log.d(TAG, "setupButtons: État initial - bound: " + bound + ", musicService: " + (musicService != null));
@@ -474,6 +491,10 @@ public class PlayerActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Met à jour l'état du bouton lecture/pause
+     * Change l'icône en fonction de l'état de lecture actuel
+     */
     private void updatePlayPauseButton() {
         if (!bound || musicService == null) {
             Log.e(TAG, "updatePlayPauseButton: Service non disponible");
@@ -542,6 +563,10 @@ public class PlayerActivity extends AppCompatActivity {
         favoriteAnim.start();
     }
 
+    /**
+     * Bascule l'état des favoris pour la piste actuelle
+     * Met à jour l'interface et persiste le changement
+     */
     private void toggleFavorite() {
         boolean isFavorite = favoritesManager.toggleFavorite(currentTrack);
         updateFavoriteButton();
@@ -550,6 +575,10 @@ public class PlayerActivity extends AppCompatActivity {
         animateFavoriteButton();
     }
 
+    /**
+     * Charge et joue la piste actuelle
+     * Initialise la lecture et met à jour l'interface
+     */
     private void loadAndPlayTrack() {
         if (currentTrack == null || !bound || musicService == null) {
             Log.e(TAG, "loadAndPlayTrack: Conditions non remplies - currentTrack: " + (currentTrack != null) + 
@@ -671,6 +700,10 @@ public class PlayerActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Joue une piste spécifique
+     * Gère la lecture et la mise à jour de l'interface
+     */
     private void playTrack(Track track) {
         if (bound && musicService != null) {
             currentTrack = track;
@@ -687,6 +720,10 @@ public class PlayerActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Joue la piste précédente
+     * Gère la navigation et les animations de transition
+     */
     private void playPreviousTrack() {
         if (bound && musicService != null) {
             Track previousTrack = queueManager.getPreviousTrack();
@@ -698,6 +735,10 @@ public class PlayerActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Joue la piste suivante
+     * Gère la navigation et les animations de transition
+     */
     private void playNextTrack() {
         if (bound && musicService != null) {
             Track nextTrack = queueManager.getNextTrack();
@@ -709,6 +750,10 @@ public class PlayerActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Met à jour l'état du bouton des favoris
+     * Reflète l'état actuel des favoris pour la piste en cours
+     */
     private void updateFavoriteButton() {
         boolean isFavorite = favoritesManager.isFavorite(currentTrack);
         if (isFavorite) {
@@ -720,6 +765,10 @@ public class PlayerActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Met à jour la barre de progression
+     * Synchronise la position de lecture avec l'interface
+     */
     private void updateSeekBar() {
         if (bound && musicService != null && musicService.isPlaying()) {
             int currentPosition = musicService.getCurrentPosition();
@@ -730,6 +779,10 @@ public class PlayerActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Formate la durée en format lisible
+     * Convertit les millisecondes en format MM:SS
+     */
     private String formatDuration(long duration) {
         return String.format(Locale.getDefault(), "%02d:%02d",
                 TimeUnit.MILLISECONDS.toMinutes(duration),
@@ -738,6 +791,10 @@ public class PlayerActivity extends AppCompatActivity {
         );
     }
 
+    /**
+     * Met à jour l'interface utilisateur
+     * Synchronise tous les éléments visuels avec l'état actuel
+     */
     private void updateUI() {
         if (currentTrack == null) {
             Log.e(TAG, "updateUI: Aucune piste sélectionnée");
@@ -816,6 +873,10 @@ public class PlayerActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Configure la barre de progression
+     * Initialise les écouteurs pour le contrôle de la position de lecture
+     */
     private void setupSeekBar() {
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
@@ -1120,6 +1181,10 @@ public class PlayerActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Configure la file d'attente
+     * Initialise la liste de lecture et les gestes de réorganisation
+     */
     private void setupQueue() {
         queueRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         queueAdapter = new QueueAdapter(
@@ -1156,6 +1221,10 @@ public class PlayerActivity extends AppCompatActivity {
         itemTouchHelper.attachToRecyclerView(queueRecyclerView);
     }
 
+    /**
+     * Affiche la boîte de dialogue d'ajout à la file d'attente
+     * Permet à l'utilisateur de sélectionner des pistes à ajouter
+     */
     private void showAddToQueueDialog() {
         String[] options = {
             "Ajouter après la piste en cours",
@@ -1188,6 +1257,10 @@ public class PlayerActivity extends AppCompatActivity {
             .show();
     }
 
+    /**
+     * Affiche la boîte de dialogue de sélection des pistes
+     * Permet à l'utilisateur de choisir des pistes à ajouter
+     */
     private void showAddTracksDialog() {
         // Récupérer toutes les pistes disponibles
         List<Track> allTracks = MusicPlayerState.getInstance().getTrackList();
@@ -1246,6 +1319,10 @@ public class PlayerActivity extends AppCompatActivity {
 
     private static final int REQUEST_ADD_TO_QUEUE = 1001;
 
+    /**
+     * Met à jour l'interface de la file d'attente
+     * Rafraîchit l'affichage de la liste de lecture
+     */
     private void updateQueueUI() {
         if (queueAdapter != null) {
             queueAdapter.updateQueue(queueManager.getQueue(), queueManager.getCurrentIndex());

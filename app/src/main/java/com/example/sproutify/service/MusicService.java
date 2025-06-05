@@ -256,7 +256,8 @@ public class MusicService extends Service {
     }
 
     /**
-     * Met la lecture en pause.
+     * Met en pause la lecture en cours
+     * Arrête temporairement la lecture et notifie les listeners
      */
     public void pause() {
         if (mediaPlayer != null && mediaPlayer.isPlaying()) {
@@ -273,8 +274,8 @@ public class MusicService extends Service {
     }
 
     /**
-     * Change la position de lecture.
-     * @param position Nouvelle position en millisecondes
+     * Déplace la position de lecture à un moment spécifique
+     * @param position Position en millisecondes où se déplacer
      */
     public void seekTo(int position) {
         if (mediaPlayer != null && isPrepared) {
@@ -288,15 +289,16 @@ public class MusicService extends Service {
     }
 
     /**
-     * Vérifie si la lecture est en cours.
-     * @return true si la lecture est en cours, false sinon
+     * Vérifie si une lecture est en cours
+     * @return true si une lecture est active, false sinon
      */
     public boolean isPlaying() {
         return mediaPlayer != null && mediaPlayer.isPlaying();
     }
 
     /**
-     * Bascule entre lecture et pause.
+     * Alterne entre la lecture et la pause
+     * Bascule l'état de lecture actuel
      */
     public void togglePlayPause() {
         if (isPlaying()) {
@@ -309,7 +311,7 @@ public class MusicService extends Service {
     }
 
     /**
-     * Obtient la position actuelle de lecture.
+     * Récupère la position actuelle de lecture
      * @return Position actuelle en millisecondes
      */
     public int getCurrentPosition() {
@@ -325,8 +327,8 @@ public class MusicService extends Service {
     }
 
     /**
-     * Obtient la durée totale du morceau.
-     * @return Durée en millisecondes
+     * Récupère la durée totale du morceau en cours
+     * @return Durée totale en millisecondes
      */
     public int getDuration() {
         if (mediaPlayer != null && isPrepared) {
@@ -341,7 +343,7 @@ public class MusicService extends Service {
     }
 
     /**
-     * Définit le volume de lecture.
+     * Définit le volume de lecture
      * @param volume Volume entre 0 et 100
      */
     public void setVolume(int volume) {
@@ -358,7 +360,8 @@ public class MusicService extends Service {
     }
 
     /**
-     * Joue le morceau suivant dans la file d'attente.
+     * Joue le morceau suivant dans la file d'attente
+     * Gère la lecture en boucle et la fin de la liste
      */
     public void playNext() {
         Track nextTrack = QueueManager.getInstance().getNextTrack();
@@ -373,7 +376,8 @@ public class MusicService extends Service {
     }
 
     /**
-     * Joue le morceau précédent dans la file d'attente.
+     * Joue le morceau précédent dans la file d'attente
+     * Gère la navigation dans l'historique de lecture
      */
     public void playPrevious() {
         Track previousTrack = QueueManager.getInstance().getPreviousTrack();
@@ -388,7 +392,7 @@ public class MusicService extends Service {
     }
 
     /**
-     * Active ou désactive le mode aléatoire.
+     * Active ou désactive le mode lecture aléatoire
      * @param shuffle true pour activer, false pour désactiver
      */
     public void setShuffleMode(boolean shuffle) {
@@ -396,15 +400,16 @@ public class MusicService extends Service {
     }
 
     /**
-     * Vérifie si le mode aléatoire est activé.
-     * @return true si le mode aléatoire est activé
+     * Vérifie si le mode lecture aléatoire est actif
+     * @return true si le mode aléatoire est activé, false sinon
      */
     public boolean isShuffleMode() {
         return QueueManager.getInstance().isShuffleMode();
     }
 
     /**
-     * Nettoie les ressources lors de la destruction du service.
+     * Nettoie les ressources lors de la destruction du service
+     * Libère le MediaPlayer et les ressources associées
      */
     @Override
     public void onDestroy() {

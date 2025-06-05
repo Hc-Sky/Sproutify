@@ -15,11 +15,20 @@ import com.example.sproutify.ui.TrackAdapter;
 
 import java.util.List;
 
+/**
+ * Activité de sélection de piste
+ * Permet à l'utilisateur de sélectionner une piste à ajouter à la file d'attente
+ * ou à jouer immédiatement
+ */
 public class TrackSelectionActivity extends AppCompatActivity implements TrackAdapter.OnTrackClickListener {
     private RecyclerView recyclerView;
     private TrackAdapter adapter;
     private List<Track> allTracks;
 
+    /**
+     * Initialise l'activité de sélection
+     * Configure la toolbar et la liste des pistes disponibles
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -42,6 +51,10 @@ public class TrackSelectionActivity extends AppCompatActivity implements TrackAd
         recyclerView.setAdapter(adapter);
     }
 
+    /**
+     * Gère le clic sur une piste dans la liste
+     * Retourne la piste sélectionnée à l'activité appelante
+     */
     @Override
     public void onTrackClick(Track track, int position) {
         Intent resultIntent = new Intent();
@@ -51,6 +64,10 @@ public class TrackSelectionActivity extends AppCompatActivity implements TrackAd
         finish();
     }
 
+    /**
+     * Gère les actions de la toolbar
+     * Permet de revenir à l'activité précédente
+     */
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == android.R.id.home) {
